@@ -1,0 +1,121 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <nanoarrow/nanoarrow.hpp>
+
+#include "driver/cube/connection.h"
+#include "driver/cube/database.h"
+
+namespace adbc::cube {
+
+CubeConnectionImpl::CubeConnectionImpl(const CubeDatabase& database)
+    : host_(database.host()),
+      port_(database.port()),
+      token_(database.token()),
+      database_(database.database()),
+      user_(database.user()),
+      password_(database.password()) {}
+
+CubeConnectionImpl::~CubeConnectionImpl() {
+  if (connected_) {
+    AdbcError error = {};
+    std::ignore = Disconnect(&error);
+    error.release(&error);
+  }
+}
+
+Status CubeConnectionImpl::Connect(struct AdbcError* error) {
+  // TODO: Implement actual connection to Cube SQL API
+  // For now, we mark as connected since we'll use HTTP protocol
+  // In a real implementation, we would:
+  // 1. Connect to host:port using PostgreSQL protocol
+  // 2. Send authentication with token/user/password
+  // 3. Verify connection is successful
+
+  if (host_.empty() || port_.empty()) {
+    return status::fmt::InvalidArgument(
+        "Connection requires host and port. Got host='{}', port='{}'", host_,
+        port_);
+  }
+
+  connected_ = true;
+  return status::Ok();
+}
+
+Status CubeConnectionImpl::Disconnect(struct AdbcError* error) {
+  // TODO: Close connection to Cube SQL API
+  connected_ = false;
+  return status::Ok();
+}
+
+Status CubeConnectionImpl::ExecuteQuery(const std::string& query,
+                                       struct AdbcError* error) {
+  // TODO: Implement query execution against Cube SQL
+  // This would:
+  // 1. Send query to Cube SQL API
+  // 2. Receive Arrow IPC serialized results
+  // 3. Deserialize Arrow records
+  // 4. Return results via ArrowArrayStream
+
+  if (!connected_) {
+    return status::InvalidState("Connection not established");
+  }
+
+  return status::Ok();
+}
+
+
+// CubeConnection implementation
+
+Status CubeConnection::InitImpl(void* raw_connection) {
+  // raw_connection is the AdbcDatabase* passed from CConnectionInit
+  auto* cube_database = static_cast<CubeDatabase*>(raw_connection);
+  impl_ = std::make_unique<CubeConnectionImpl>(*cube_database);
+
+  struct AdbcError error = ADBC_ERROR_INIT;
+  auto status = impl_->Connect(&error);
+  if (error.message) {
+    error.release(&error);
+  }
+  return status;
+}
+
+Status CubeConnection::ReleaseImpl() {
+  if (impl_) {
+    struct AdbcError error = ADBC_ERROR_INIT;
+    auto status = impl_->Disconnect(&error);
+    if (error.message) {
+      error.release(&error);
+    }
+    impl_.reset();
+    return status;
+  }
+  return status::Ok();
+}
+
+Status CubeConnection::SetOptionImpl(std::string_view key, driver::Option value) {
+  // Connection-specific options can be added here
+  return status::NotImplemented("Connection options not yet implemented");
+}
+
+}  // namespace adbc::cube

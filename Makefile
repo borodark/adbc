@@ -11,9 +11,11 @@ ADBC_C_SRC = $(ADBC_SRC)/c
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	ADBC_DRIVER_COMMON_LIB = $(PRIV_DIR)/lib/libadbc_driver_manager.so
+	ADBC_DRIVER_CUBE_LIB = $(PRIV_DIR)/lib/libadbc_driver_cube.so
 endif
 ifeq ($(UNAME_S),Darwin)
 	ADBC_DRIVER_COMMON_LIB = $(PRIV_DIR)/lib/libadbc_driver_manager.dylib
+	ADBC_DRIVER_CUBE_LIB = $(PRIV_DIR)/lib/libadbc_driver_cube.dylib
 endif
 
 C_SRC = $(shell pwd)/c_src
@@ -43,7 +45,7 @@ MAKE_BUILD_FLAGS ?= -j$(DEFAULT_JOBS)
 
 .DEFAULT_GLOBAL := build
 
-build: $(NIF_SO_REL)
+build: $(NIF_SO_REL) $(ADBC_DRIVER_CUBE_LIB)
 	@ if [ "${CI}" = "true" ]; then \
 		file "$(NIF_SO)" ; \
 	fi
@@ -84,6 +86,18 @@ adbc: priv_dir
 			$(CMAKE_CONFIGURE_FLAGS) $(CMAKE_ADBC_OPTIONS) "$(ADBC_C_SRC)" && \
 		cmake --build . --target install -j ; \
 	fi
+
+$(ADBC_DRIVER_CUBE_LIB): adbc
+	@ if [ ! -f "$(ADBC_DRIVER_CUBE_LIB)" ]; then \
+		cd "$(CMAKE_ADBC_BUILD_DIR)" && \
+		cmake --no-warn-unused-cli \
+			-DADBC_DRIVER_CUBE="ON" \
+			$(CMAKE_CONFIGURE_FLAGS) $(CMAKE_ADBC_OPTIONS) "$(ADBC_C_SRC)" && \
+		cmake --build . --target adbc_driver_cube_shared --target install -j ; \
+	fi
+
+.PHONY: cube_driver
+cube_driver: $(ADBC_DRIVER_CUBE_LIB)
 
 $(NIF_SO_REL): priv_dir adbc $(C_SRC_REL)/adbc_nif_resource.hpp $(C_SRC_REL)/adbc_nif.cpp $(C_SRC_REL)/nif_utils.hpp $(C_SRC_REL)/nif_utils.cpp
 	@ mkdir -p "$(CMAKE_ADBC_NIF_BUILD_DIR)" && \

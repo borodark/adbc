@@ -101,6 +101,12 @@ if(ADBC_DRIVER_BIGQUERY)
   add_subdirectory(driver/bigquery)
 endif()
 
+if(ADBC_DRIVER_CUBE)
+  install(FILES "${REPOSITORY_ROOT}/c/include/arrow-adbc/driver/cube.h"
+          DESTINATION include/arrow-adbc/driver)
+  add_subdirectory(driver/cube)
+endif()
+
 if(ADBC_INTEGRATION_DUCKDB)
   add_subdirectory(integration/duckdb)
 endif()
@@ -154,6 +160,10 @@ LIBRARY=$<TARGET_FILE:adbc_driver_${TARGET}_shared>" ${Python3_EXECUTABLE} -m pi
 
   if(ADBC_DRIVER_BIGQUERY)
     adbc_install_python_package(bigquery)
+  endif()
+
+  if(ADBC_DRIVER_CUBE)
+    adbc_install_python_package(cube)
   endif()
 endif()
 

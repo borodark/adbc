@@ -15,12 +15,45 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Find libpq for PostgreSQL protocol support
+if(WIN32)
+  # XXX: for now, assume vcpkg
+  find_package(PostgreSQL REQUIRED)
+  set(LIBPQ_LINK_LIBRARIES PostgreSQL::PostgreSQL wsock32 ws2_32)
+  set(LIBPQ_STATIC_LIBRARIES PostgreSQL::PostgreSQL)
+  set(LIBPQ_INCLUDE_DIRS)
+else()
+  find_package(PkgConfig QUIET)
+  if(PkgConfig_FOUND)
+    pkg_check_modules(LIBPQ QUIET libpq)
+  endif()
+
+  if(NOT LIBPQ_FOUND)
+    # Try to find libpq manually
+    find_library(LIBPQ_LIBRARY NAMES pq)
+    find_path(LIBPQ_INCLUDE_DIR NAMES libpq-fe.h)
+
+    if(LIBPQ_LIBRARY AND LIBPQ_INCLUDE_DIR)
+      set(LIBPQ_LINK_LIBRARIES ${LIBPQ_LIBRARY})
+      set(LIBPQ_STATIC_LIBRARIES ${LIBPQ_LIBRARY})
+      set(LIBPQ_INCLUDE_DIRS ${LIBPQ_INCLUDE_DIR})
+      message(STATUS "Found libpq: ${LIBPQ_LIBRARY}")
+    else()
+      message(WARNING "libpq not found - building without PostgreSQL support")
+      set(LIBPQ_LINK_LIBRARIES)
+      set(LIBPQ_STATIC_LIBRARIES)
+      set(LIBPQ_INCLUDE_DIRS)
+    endif()
+  endif()
+endif()
+
 add_arrow_lib(adbc_driver_cube
               SOURCES
               cube.cc
               database.cc
               connection.cc
               statement.cc
+              arrow_reader.cc
               OUTPUTS
               ADBC_LIBRARIES
               CMAKE_PACKAGE_NAME
@@ -32,15 +65,17 @@ add_arrow_lib(adbc_driver_cube
               SHARED_LINK_LIBS
               adbc_driver_common
               adbc_driver_framework
+              ${LIBPQ_LINK_LIBRARIES}
               STATIC_LINK_LIBS
               adbc_driver_common
-              adbc_driver_framework)
+              adbc_driver_framework
+              ${LIBPQ_STATIC_LIBRARIES})
 
 foreach(LIB_TARGET ${ADBC_LIBRARIES})
   target_compile_definitions(${LIB_TARGET} PRIVATE ADBC_EXPORTING)
   target_include_directories(${LIB_TARGET} SYSTEM
                              PRIVATE ${REPOSITORY_ROOT}/c/ ${REPOSITORY_ROOT}/c/include/
-                                     ${REPOSITORY_ROOT}/c/driver)
+                                     ${REPOSITORY_ROOT}/c/driver ${LIBPQ_INCLUDE_DIRS})
 
   if(NOT ADBC_DEFINE_COMMON_ENTRYPOINTS)
     target_compile_definitions(${LIB_TARGET} PRIVATE ${ADBC_TARGET_COMPILE_DEFINITIONS})

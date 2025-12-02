@@ -45,17 +45,44 @@ CubeConnectionImpl::~CubeConnectionImpl() {
 }
 
 Status CubeConnectionImpl::Connect(struct AdbcError* error) {
-  // TODO: Implement actual connection to Cube SQL API
-  // For now, we mark as connected since we'll use HTTP protocol
-  // In a real implementation, we would:
-  // 1. Connect to host:port using PostgreSQL protocol
-  // 2. Send authentication with token/user/password
-  // 3. Verify connection is successful
-
   if (host_.empty() || port_.empty()) {
     return status::fmt::InvalidArgument(
         "Connection requires host and port. Got host='{}', port='{}'", host_,
         port_);
+  }
+
+  // Build PostgreSQL connection string
+  std::string conn_str = "host=" + host_ + " port=" + port_;
+
+  if (!database_.empty()) {
+    conn_str += " dbname=" + database_;
+  }
+
+  if (!user_.empty()) {
+    conn_str += " user=" + user_;
+  }
+
+  if (!password_.empty()) {
+    conn_str += " password=" + password_;
+  }
+
+  // Add output format parameter to use Arrow IPC
+  conn_str += " output_format=arrow_ipc";
+
+  // Connect to Cube SQL via PostgreSQL protocol
+  conn_ = PQconnectdb(conn_str.c_str());
+
+  if (!conn_) {
+    return status::Internal("Failed to allocate PQconnect connection");
+  }
+
+  if (PQstatus(conn_) != CONNECTION_OK) {
+    std::string error_msg = PQerrorMessage(conn_);
+    PQfinish(conn_);
+    conn_ = nullptr;
+    return status::fmt::InvalidState(
+        "Failed to connect to Cube SQL at {}:{}: {}",
+        host_, port_, error_msg);
   }
 
   connected_ = true;
@@ -63,7 +90,10 @@ Status CubeConnectionImpl::Connect(struct AdbcError* error) {
 }
 
 Status CubeConnectionImpl::Disconnect(struct AdbcError* error) {
-  // TODO: Close connection to Cube SQL API
+  if (conn_) {
+    PQfinish(conn_);
+    conn_ = nullptr;
+  }
   connected_ = false;
   return status::Ok();
 }

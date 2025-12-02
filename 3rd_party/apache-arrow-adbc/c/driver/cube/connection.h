@@ -21,6 +21,17 @@
 #include <optional>
 #include <string>
 
+// Try to include real libpq, fall back to compatibility header
+#ifdef __has_include
+#if __has_include(<libpq-fe.h>)
+#include <libpq-fe.h>
+#else
+#include "driver/cube/libpq_compat.h"
+#endif
+#else
+#include "driver/cube/libpq_compat.h"
+#endif
+
 #include <arrow-adbc/adbc.h>
 
 #define ADBC_FRAMEWORK_USE_FMT
@@ -65,6 +76,7 @@ class CubeConnectionImpl {
   std::string user_;
   std::string password_;
   bool connected_ = false;
+  PGconn* conn_ = nullptr;  // PostgreSQL connection via libpq
 };
 
 class CubeConnection : public driver::Connection<CubeConnection> {

@@ -16,6 +16,7 @@
 // under the License.
 
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <utility>
@@ -24,6 +25,7 @@
 #include <nanoarrow/nanoarrow.hpp>
 
 #include "driver/cube/connection.h"
+#include "driver/cube/parameter_converter.h"
 #include "driver/cube/statement.h"
 
 namespace adbc::cube {
@@ -42,14 +44,41 @@ Status CubeStatementImpl::Prepare(struct AdbcError* error) {
 Status CubeStatementImpl::Bind(struct ArrowArray* values,
                               struct ArrowSchema* schema,
                               struct AdbcError* error) {
-  // TODO: Implement parameter binding
-  // Convert Arrow arrays to Cube parameter format
+  if (!values || !schema) {
+    return status::InvalidArgument("Parameter values and schema cannot be null");
+  }
+
+  // Store parameter array and schema for later use
+  param_array_ = *values;
+  param_schema_ = *schema;
+  has_params_ = true;
+
   return status::Ok();
 }
 
 Status CubeStatementImpl::BindStream(struct ArrowArrayStream* values,
                                     struct AdbcError* error) {
-  // TODO: Implement streaming parameter binding
+  if (!values) {
+    return status::InvalidArgument("Parameter stream cannot be null");
+  }
+
+  // For streaming parameters, we store the stream and fetch batches as needed
+  // during execution. For now, fetch the first batch to get the schema.
+  struct ArrowArray batch = {};
+  int fetch_status = values->get_next(values, &batch);
+
+  if (fetch_status != 0) {
+    return status::Internal(
+        "Failed to fetch first parameter batch from stream");
+  }
+
+  // Store the first batch as parameter array
+  param_array_ = batch;
+  if (values->get_schema) {
+    values->get_schema(values, &param_schema_);
+  }
+  has_params_ = true;
+
   return status::Ok();
 }
 
@@ -62,20 +91,40 @@ Result<int64_t> CubeStatementImpl::ExecuteQuery(struct ArrowArrayStream* out) {
     return status::InvalidState("Connection not established");
   }
 
-  // TODO: Execute query against Cube SQL
-  // 1. Send query to Cube SQL API
-  // 2. Receive Arrow IPC serialized results
-  // 3. Deserialize Arrow records
-  // 4. Return via ArrowArrayStream
+  if (!out) {
+    return status::InvalidArgument("Output stream cannot be null");
+  }
 
+  // If parameters are bound, convert them to PostgreSQL text format
+  std::vector<std::string> param_values;
+  const char** param_c_values = nullptr;
+  std::unique_ptr<char*[], decltype(&free)> param_cleanup(nullptr, &free);
+
+  if (has_params_) {
+    // Convert Arrow array parameters to PostgreSQL text format
+    param_values = ParameterConverter::ConvertArrowArrayToParams(
+        &param_array_, &param_schema_);
+
+    if (!param_values.empty()) {
+      param_c_values =
+          ParameterConverter::GetParamValuesCArray(param_values);
+      if (param_c_values) {
+        param_cleanup.reset(const_cast<char**>(param_c_values));
+      }
+    }
+  }
+
+  // Execute query against Cube SQL via libpq
+  // TODO: When parameters present, use PQexecParams with param_c_values
+  // For now, use basic query execution
   auto status_result = connection_->ExecuteQuery(query_, nullptr);
   if (!status_result.ok()) {
     return status_result;
   }
 
   // Create an Arrow array stream from results
-  // This is a placeholder - in reality we'd need to properly implement
-  // ArrowArrayStream creation with actual Cube SQL API results
+  // This is a placeholder - will be properly implemented with arrow_reader
+  // integration in the connection layer
   out->release = nullptr;
 
   return -1L;  // Unknown number of affected rows

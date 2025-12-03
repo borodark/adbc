@@ -61,7 +61,7 @@ template <typename T> struct NifRes {
       error = erlang::nif::error(env, "cannot allocate Nif resource\n");
       return res;
     }
-    memset(&res->val, 0, sizeof(val_type));
+    res->val = val_type();
     res->private_data = nullptr;
     return res;
   }

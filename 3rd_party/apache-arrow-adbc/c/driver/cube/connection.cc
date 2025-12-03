@@ -25,6 +25,7 @@
 
 #include "driver/cube/connection.h"
 #include "driver/cube/database.h"
+#include "driver/cube/metadata.h"
 
 namespace adbc::cube {
 
@@ -114,6 +115,50 @@ Status CubeConnectionImpl::ExecuteQuery(const std::string& query,
   return status::Ok();
 }
 
+Status CubeConnectionImpl::GetTableSchema(const std::string& table_schema,
+                                         const std::string& table_name,
+                                         struct ArrowSchema* schema) {
+  if (!connected_) {
+    return status::InvalidState("Connection not established");
+  }
+
+  if (table_name.empty()) {
+    return status::InvalidArgument("Table name cannot be empty");
+  }
+
+  if (!schema) {
+    return status::InvalidArgument("Schema pointer cannot be null");
+  }
+
+  // Query information_schema.columns to get table metadata
+  // Cube SQL follows PostgreSQL conventions for information_schema
+  std::string query =
+      "SELECT column_name, data_type, is_nullable "
+      "FROM information_schema.columns "
+      "WHERE table_name = '" + table_name + "'";
+
+  if (!table_schema.empty()) {
+    query += " AND table_schema = '" + table_schema + "'";
+  }
+
+  query += " ORDER BY ordinal_position";
+
+  // Execute query to get column information
+  // TODO: Once ExecuteQuery is fully implemented, use it to fetch columns
+  // For now, return a placeholder empty schema structure
+
+  MetadataBuilder builder;
+
+  // This is a placeholder - in production, we would:
+  // 1. Execute the information_schema query
+  // 2. Parse results
+  // 3. Add each column to the builder
+  // 4. Build the final schema
+
+  *schema = builder.Build();
+  return status::Ok();
+}
+
 
 // CubeConnection implementation
 
@@ -146,6 +191,30 @@ Status CubeConnection::ReleaseImpl() {
 Status CubeConnection::SetOptionImpl(std::string_view key, driver::Option value) {
   // Connection-specific options can be added here
   return status::NotImplemented("Connection options not yet implemented");
+}
+
+Status CubeConnection::GetTableSchemaImpl(std::optional<std::string_view> catalog,
+                                         std::optional<std::string_view> db_schema,
+                                         std::string_view table_name,
+                                         struct ArrowSchema* schema) {
+  if (!impl_) {
+    return status::InvalidState("Connection not initialized");
+  }
+
+  if (table_name.empty()) {
+    return status::InvalidArgument("Table name cannot be empty");
+  }
+
+  if (!schema) {
+    return status::InvalidArgument("Schema pointer cannot be null");
+  }
+
+  // Convert string_view to std::string for CubeConnectionImpl
+  std::string schema_name = db_schema.has_value() ? std::string(*db_schema) : "";
+  std::string tbl_name = std::string(table_name);
+
+  // Delegate to impl for schema retrieval
+  return impl_->GetTableSchema(schema_name, tbl_name, schema);
 }
 
 }  // namespace adbc::cube

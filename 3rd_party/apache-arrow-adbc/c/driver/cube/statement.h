@@ -20,8 +20,10 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <arrow-adbc/adbc.h>
+#include <nanoarrow/nanoarrow.h>
 
 #define ADBC_FRAMEWORK_USE_FMT
 #include "driver/framework/statement.h"
@@ -59,6 +61,11 @@ class CubeStatementImpl {
   CubeConnectionImpl* connection_;  // Non-owning
   std::string query_;
   bool prepared_ = false;
+
+  // Parameter binding storage
+  struct ArrowArray param_array_;
+  struct ArrowSchema param_schema_;
+  bool has_params_ = false;
 };
 
 class CubeStatement : public driver::Statement<CubeStatement> {

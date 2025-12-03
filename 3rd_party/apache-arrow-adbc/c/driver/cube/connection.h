@@ -61,6 +61,11 @@ class CubeConnectionImpl {
   // Query execution
   Status ExecuteQuery(const std::string& query, struct AdbcError* error);
 
+  // Metadata queries
+  Status GetTableSchema(const std::string& table_schema,
+                        const std::string& table_name,
+                        struct ArrowSchema* schema);
+
   const std::string& host() const { return host_; }
   const std::string& port() const { return port_; }
   const std::string& token() const { return token_; }
@@ -96,10 +101,8 @@ class CubeConnection : public driver::Connection<CubeConnection> {
   Status GetTableSchemaImpl(std::optional<std::string_view> catalog,
                            std::optional<std::string_view> db_schema,
                            std::string_view table_name,
-                           struct ArrowSchema* schema) {
-    // TODO: Implement schema retrieval for a specific table
-    return status::NotImplemented("GetTableSchema");
-  }
+                           struct ArrowSchema* schema);
+
 
   std::unique_ptr<CubeConnectionImpl> impl_;
 };

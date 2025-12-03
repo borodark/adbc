@@ -38,9 +38,9 @@ endif
 CMAKE_BUILD_TYPE ?= Release
 DEFAULT_JOBS ?= 1
 CMAKE_ADBC_BUILD_DIR = $(MIX_APP_PATH)/cmake_adbc
-CMAKE_ADBC_OPTIONS ?= ""
+CMAKE_ADBC_OPTIONS ?=
 CMAKE_ADBC_NIF_BUILD_DIR = $(MIX_APP_PATH)/cmake_adbc_nif
-CMAKE_ADBC_NIF_OPTIONS ?= ""
+CMAKE_ADBC_NIF_OPTIONS ?=
 MAKE_BUILD_FLAGS ?= -j$(DEFAULT_JOBS)
 
 .DEFAULT_GLOBAL := build
@@ -103,12 +103,12 @@ $(NIF_SO_REL): priv_dir adbc $(C_SRC_REL)/adbc_nif_resource.hpp $(C_SRC_REL)/adb
 	@ mkdir -p "$(CMAKE_ADBC_NIF_BUILD_DIR)" && \
 	cd "$(CMAKE_ADBC_NIF_BUILD_DIR)" && \
 	cmake --no-warn-unused-cli \
-		-D CMAKE_BUILD_TYPE="$(CMAKE_BUILD_TYPE)" \
-		-D C_SRC="$(C_SRC)" \
-		-D ADBC_SRC="$(ADBC_SRC)" \
-		-D MIX_APP_PATH="$(MIX_APP_PATH)" \
-		-D PRIV_DIR="$(PRIV_DIR)" \
-		-D ERTS_INCLUDE_DIR="$(ERTS_INCLUDE_DIR)" \
+		-DCMAKE_BUILD_TYPE="$(CMAKE_BUILD_TYPE)" \
+		-DC_SRC="$(C_SRC)" \
+		-DADBC_SRC="$(ADBC_SRC)" \
+		-DMIX_APP_PATH="$(MIX_APP_PATH)" \
+		-DPRIV_DIR="$(PRIV_DIR)" \
+		$(if $(ERTS_INCLUDE_DIR),-DERTS_INCLUDE_DIR="$(ERTS_INCLUDE_DIR)") \
 		$(CMAKE_CONFIGURE_FLAGS) $(CMAKE_ADBC_NIF_OPTIONS) "$(shell pwd)" && \
 	make "$(MAKE_BUILD_FLAGS)" && \
 	cp "$(CMAKE_ADBC_NIF_BUILD_DIR)/adbc_nif.so" "$(NIF_SO)"

@@ -242,7 +242,7 @@ Test test_arrow_ipc_output_format() {
         PQclear(res);
 
         // Execute query with Arrow IPC format
-        res = PQexec(conn, "SELECT 1, 2, 3");
+        res = PQexec(conn, "SELECT orders.FUL, MEASURE(orders.tax_amount) FROM orders GROUP BY 1");
         if (!res || PQresultStatus(res) != PGRES_TUPLES_OK) {
             test.error = "Query with Arrow IPC format failed";
             if (res) PQclear(res);
@@ -250,7 +250,62 @@ Test test_arrow_ipc_output_format() {
             return test;
         }
 
-        test.details = "Arrow IPC format successfully negotiated via SET command";
+        // Print Arrow IPC data information
+        int ntuples = PQntuples(res);
+        int nfields = PQnfields(res);
+
+        cout << endl << "         " << BLUE << "Arrow IPC Data:" << RESET << endl;
+        cout << "         Rows: " << ntuples << ", Columns: " << nfields << endl;
+
+        // Print column names and types
+        cout << "         Columns: ";
+        for (int i = 0; i < nfields; i++) {
+            cout << PQfname(res, i);
+            if (i < nfields - 1) cout << ", ";
+        }
+        cout << endl;
+
+        // Print binary data information for first few rows
+        cout << "         " << BLUE << "Data Preview:" << RESET << endl;
+        int rows_to_show = (ntuples < 10) ? ntuples : 10;
+
+        for (int row = 0; row < rows_to_show; row++) {
+            cout << "         Row " << row << ": ";
+            for (int col = 0; col < nfields; col++) {
+                if (PQgetisnull(res, row, col)) {
+                    cout << "NULL";
+                } else {
+                    // Get value as text (libpq will convert if possible)
+                    char* val = PQgetvalue(res, row, col);
+                    int len = PQgetlength(res, row, col);
+
+                    // Try to print as text, fall back to hex for binary
+                    bool is_binary = PQfformat(res, col) == 1;
+                    if (is_binary || len > 100) {
+                        cout << "[" << len << " bytes";
+                        if (len > 0 && len <= 20) {
+                            cout << ": ";
+                            for (int i = 0; i < len; i++) {
+                                printf("%02x", (unsigned char)val[i]);
+                                if (i < len - 1) cout << " ";
+                            }
+                        }
+                        cout << "]";
+                    } else {
+                        // Print as text
+                        cout << "'" << string(val, len) << "'";
+                    }
+                }
+                if (col < nfields - 1) cout << ", ";
+            }
+            cout << endl;
+        }
+
+        if (ntuples > rows_to_show) {
+            cout << "         ... (" << (ntuples - rows_to_show) << " more rows)" << endl;
+        }
+
+        test.details = "Arrow IPC format successfully negotiated, data retrieved and displayed";
 
         PQclear(res);
         PQfinish(conn);

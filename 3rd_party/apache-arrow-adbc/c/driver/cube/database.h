@@ -30,6 +30,9 @@
 
 namespace adbc::cube {
 
+// Forward declare ConnectionMode (defined in connection.h)
+enum class ConnectionMode;
+
 using driver::Result;
 using driver::Status;
 namespace status = adbc::driver::status;
@@ -51,6 +54,7 @@ class CubeDatabase : public driver::Database<CubeDatabase> {
   const std::string& database() const { return database_; }
   const std::string& user() const { return user_; }
   const std::string& password() const { return password_; }
+  ConnectionMode connection_mode() const;
 
  private:
   std::string host_ = "localhost";
@@ -59,6 +63,7 @@ class CubeDatabase : public driver::Database<CubeDatabase> {
   std::string database_;
   std::string user_;
   std::string password_;
+  std::string connection_mode_str_ = "postgresql";  // Default to PostgreSQL for compatibility
 };
 
 }  // namespace adbc::cube

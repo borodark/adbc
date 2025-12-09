@@ -17,10 +17,26 @@
 
 #include <cstdlib>
 #include <utility>
+#include <algorithm>
+#include <cctype>
 
 #include "driver/cube/database.h"
+#include "driver/cube/connection.h"
 
 namespace adbc::cube {
+
+ConnectionMode CubeDatabase::connection_mode() const {
+  // Convert string to lowercase for case-insensitive comparison
+  std::string mode_lower = connection_mode_str_;
+  std::transform(mode_lower.begin(), mode_lower.end(), mode_lower.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+
+  if (mode_lower == "native" || mode_lower == "arrow_native") {
+    return ConnectionMode::Native;
+  }
+  // Default to PostgreSQL
+  return ConnectionMode::PostgreSQL;
+}
 
 Status CubeDatabase::InitImpl() {
   // Check for required authentication token
@@ -60,6 +76,10 @@ Status CubeDatabase::SetOptionImpl(std::string_view key, driver::Option value) {
   } else if (key == "adbc.cube.password") {
     UNWRAP_RESULT(auto str, value.AsString());
     password_ = str;
+    return status::Ok();
+  } else if (key == "adbc.cube.connection_mode") {
+    UNWRAP_RESULT(auto str, value.AsString());
+    connection_mode_str_ = str;
     return status::Ok();
   }
   return status::NotImplemented("Unknown option: ", key);

@@ -44,8 +44,15 @@ using driver::Result;
 using driver::Status;
 namespace status = adbc::driver::status;
 
-// Forward declaration
+// Forward declarations
 class CubeDatabase;
+class NativeClient;
+
+// Connection mode enum
+enum class ConnectionMode {
+  PostgreSQL,  // Use PostgreSQL wire protocol via libpq
+  Native       // Use native Arrow IPC protocol
+};
 
 // Cube SQL connection wrapper
 class CubeConnectionImpl {
@@ -72,6 +79,7 @@ class CubeConnectionImpl {
   const std::string& database() const { return database_; }
   const std::string& user() const { return user_; }
   const std::string& password() const { return password_; }
+  ConnectionMode connection_mode() const { return connection_mode_; }
 
  private:
   std::string host_;
@@ -80,8 +88,12 @@ class CubeConnectionImpl {
   std::string database_;
   std::string user_;
   std::string password_;
+  ConnectionMode connection_mode_ = ConnectionMode::PostgreSQL;  // Default to PostgreSQL for compatibility
   bool connected_ = false;
+
+  // Connection objects (only one will be used based on mode)
   PGconn* conn_ = nullptr;  // PostgreSQL connection via libpq
+  std::unique_ptr<NativeClient> native_client_;  // Native protocol client
 };
 
 class CubeConnection : public driver::Connection<CubeConnection> {

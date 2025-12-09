@@ -26,6 +26,7 @@
 #include "driver/cube/connection.h"
 #include "driver/cube/database.h"
 #include "driver/cube/metadata.h"
+#include "driver/cube/native_client.h"
 
 namespace adbc::cube {
 
@@ -35,7 +36,8 @@ CubeConnectionImpl::CubeConnectionImpl(const CubeDatabase& database)
       token_(database.token()),
       database_(database.database()),
       user_(database.user()),
-      password_(database.password()) {}
+      password_(database.password()),
+      connection_mode_(database.connection_mode()) {}
 
 CubeConnectionImpl::~CubeConnectionImpl() {
   if (connected_) {
@@ -52,48 +54,85 @@ Status CubeConnectionImpl::Connect(struct AdbcError* error) {
         port_);
   }
 
-  // Build PostgreSQL connection string
-  std::string conn_str = "host=" + host_ + " port=" + port_;
+  if (connection_mode_ == ConnectionMode::Native) {
+    // Use native Arrow IPC protocol
+    native_client_ = std::make_unique<NativeClient>();
 
-  if (!database_.empty()) {
-    conn_str += " dbname=" + database_;
+    int port_num = std::stoi(port_);
+    auto connect_status = native_client_->Connect(host_, port_num, error);
+    if (connect_status != AdbcStatusCode::ADBC_STATUS_OK) {
+      native_client_.reset();
+      return status::fmt::IO("Failed to connect via native protocol to {}:{}",
+                             host_, port_);
+    }
+
+    // Authenticate with token
+    if (token_.empty()) {
+      native_client_.reset();
+      return status::InvalidArgument("Native connection mode requires a token");
+    }
+
+    auto auth_status = native_client_->Authenticate(token_, database_, error);
+    if (auth_status != AdbcStatusCode::ADBC_STATUS_OK) {
+      native_client_.reset();
+      return status::Unauthenticated("Authentication failed with native protocol");
+    }
+
+    connected_ = true;
+    return status::Ok();
+
+  } else {
+    // Use PostgreSQL wire protocol (default)
+    // Build PostgreSQL connection string
+    std::string conn_str = "host=" + host_ + " port=" + port_;
+
+    if (!database_.empty()) {
+      conn_str += " dbname=" + database_;
+    }
+
+    if (!user_.empty()) {
+      conn_str += " user=" + user_;
+    }
+
+    if (!password_.empty()) {
+      conn_str += " password=" + password_;
+    }
+
+    // Add output format parameter to use Arrow IPC
+    conn_str += " output_format=arrow_ipc";
+
+    // Connect to Cube SQL via PostgreSQL protocol
+    conn_ = PQconnectdb(conn_str.c_str());
+
+    if (!conn_) {
+      return status::Internal("Failed to allocate PQconnect connection");
+    }
+
+    if (PQstatus(conn_) != CONNECTION_OK) {
+      std::string error_msg = PQerrorMessage(conn_);
+      PQfinish(conn_);
+      conn_ = nullptr;
+      return status::fmt::InvalidState(
+          "Failed to connect to Cube SQL at {}:{}: {}",
+          host_, port_, error_msg);
+    }
+
+    connected_ = true;
+    return status::Ok();
   }
-
-  if (!user_.empty()) {
-    conn_str += " user=" + user_;
-  }
-
-  if (!password_.empty()) {
-    conn_str += " password=" + password_;
-  }
-
-  // Add output format parameter to use Arrow IPC
-  conn_str += " output_format=arrow_ipc";
-
-  // Connect to Cube SQL via PostgreSQL protocol
-  conn_ = PQconnectdb(conn_str.c_str());
-
-  if (!conn_) {
-    return status::Internal("Failed to allocate PQconnect connection");
-  }
-
-  if (PQstatus(conn_) != CONNECTION_OK) {
-    std::string error_msg = PQerrorMessage(conn_);
-    PQfinish(conn_);
-    conn_ = nullptr;
-    return status::fmt::InvalidState(
-        "Failed to connect to Cube SQL at {}:{}: {}",
-        host_, port_, error_msg);
-  }
-
-  connected_ = true;
-  return status::Ok();
 }
 
 Status CubeConnectionImpl::Disconnect(struct AdbcError* error) {
-  if (conn_) {
-    PQfinish(conn_);
-    conn_ = nullptr;
+  if (connection_mode_ == ConnectionMode::Native) {
+    if (native_client_) {
+      native_client_->Close();
+      native_client_.reset();
+    }
+  } else {
+    if (conn_) {
+      PQfinish(conn_);
+      conn_ = nullptr;
+    }
   }
   connected_ = false;
   return status::Ok();

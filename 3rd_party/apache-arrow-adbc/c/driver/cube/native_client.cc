@@ -188,7 +188,11 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string& sql,
         return status;
     }
 
-    // Collect all Arrow IPC data
+    // Collect Arrow IPC batch data (which includes schema)
+    // NOTE: We only use the batch data, not the schema-only message,
+    // because each is a complete Arrow IPC stream with EOS markers.
+    // Using both would create: [Schema][EOS][Schema][Batch][EOS]
+    // which PyArrow sees as two separate streams.
     std::vector<uint8_t> arrow_ipc_data;
     bool query_complete = false;
     int64_t rows_affected = 0;
@@ -206,22 +210,18 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string& sql,
         try {
             switch (msg_type) {
                 case MessageType::QueryResponseSchema: {
-                    auto response = QueryResponseSchema::Decode(
-                        response_data.data() + 4, response_data.size() - 4);
-                    // Append schema to Arrow IPC data
-                    arrow_ipc_data.insert(arrow_ipc_data.end(),
-                                        response->arrow_ipc_schema.begin(),
-                                        response->arrow_ipc_schema.end());
+                    // Skip schema-only message - we'll get schema from batch
+                    fprintf(stderr, "[NativeClient::ExecuteQuery] Skipping schema-only message\n");
                     break;
                 }
 
                 case MessageType::QueryResponseBatch: {
                     auto response = QueryResponseBatch::Decode(
                         response_data.data() + 4, response_data.size() - 4);
-                    // Append batch to Arrow IPC data
-                    arrow_ipc_data.insert(arrow_ipc_data.end(),
-                                        response->arrow_ipc_batch.begin(),
-                                        response->arrow_ipc_batch.end());
+                    // Use only batch data (contains both schema and data)
+                    arrow_ipc_data = std::move(response->arrow_ipc_batch);
+                    fprintf(stderr, "[NativeClient::ExecuteQuery] Got batch data: %zu bytes\n",
+                            arrow_ipc_data.size());
                     break;
                 }
 
@@ -258,24 +258,36 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string& sql,
         return ADBC_STATUS_INVALID_DATA;
     }
 
+    // Initialize output stream to null state in case of error
+    memset(out, 0, sizeof(*out));
+
     try {
         auto reader = std::make_unique<CubeArrowReader>(std::move(arrow_ipc_data));
         ArrowError arrow_error;
+        memset(&arrow_error, 0, sizeof(arrow_error));  // Initialize to zeros
         auto init_status = reader->Init(&arrow_error);
         if (init_status != NANOARROW_OK) {
-            SetNativeClientError(error, "Failed to initialize Arrow reader: " +
-                                std::string(arrow_error.message));
+            std::string error_msg = "Failed to initialize Arrow reader";
+            if (arrow_error.message) {
+                error_msg += ": " + std::string(arrow_error.message);
+            }
+            SetNativeClientError(error, error_msg);
+            fprintf(stderr, "[NativeClient::ExecuteQuery] Init failed with status %d: %s\n",
+                    init_status, error_msg.c_str());
             return ADBC_STATUS_INTERNAL;
         }
 
         // Export to ArrowArrayStream
+        fprintf(stderr, "[NativeClient::ExecuteQuery] Exporting to ArrowArrayStream...\n");
         reader->ExportTo(out);
+        fprintf(stderr, "[NativeClient::ExecuteQuery] Export complete\n");
 
         // Reader ownership transferred to ArrowArrayStream
         reader.release();
 
     } catch (const std::exception& e) {
         SetNativeClientError(error, "Failed to parse Arrow IPC data: " + std::string(e.what()));
+        fprintf(stderr, "[NativeClient::ExecuteQuery] Exception: %s\n", e.what());
         return ADBC_STATUS_INVALID_DATA;
     }
 

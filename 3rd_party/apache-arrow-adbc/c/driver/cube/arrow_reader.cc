@@ -188,10 +188,45 @@ ArrowErrorCode CubeArrowReader::ParseRecordBatchMessage(
   return NANOARROW_OK;
 }
 
-void CubeArrowReader::ExportTo(struct ArrowArrayStream* stream) {
-  // For now, provide a no-op stream
-  // Full implementation would set up stream callbacks
+// Arrow stream callbacks
+static int CubeArrowStreamGetSchema(struct ArrowArrayStream* stream, struct ArrowSchema* out) {
+  auto* reader = static_cast<CubeArrowReader*>(stream->private_data);
+  ArrowError error;
+  auto status = reader->GetSchema(out);
+  return status;
+}
+
+static int CubeArrowStreamGetNext(struct ArrowArrayStream* stream, struct ArrowArray* out) {
+  auto* reader = static_cast<CubeArrowReader*>(stream->private_data);
+  ArrowError error;
+  auto status = reader->GetNext(out);
+  if (status == ENOMSG) {
+    // End of stream - return success with null array
+    out->release = nullptr;
+    return NANOARROW_OK;
+  }
+  return status;
+}
+
+static const char* CubeArrowStreamGetLastError(struct ArrowArrayStream* stream) {
+  return "Error accessing Cube Arrow stream";
+}
+
+static void CubeArrowStreamRelease(struct ArrowArrayStream* stream) {
+  if (stream->private_data != nullptr) {
+    auto* reader = static_cast<CubeArrowReader*>(stream->private_data);
+    delete reader;
+    stream->private_data = nullptr;
+  }
   stream->release = nullptr;
+}
+
+void CubeArrowReader::ExportTo(struct ArrowArrayStream* stream) {
+  stream->get_schema = CubeArrowStreamGetSchema;
+  stream->get_next = CubeArrowStreamGetNext;
+  stream->get_last_error = CubeArrowStreamGetLastError;
+  stream->release = CubeArrowStreamRelease;
+  stream->private_data = this;
 }
 
 }  // namespace adbc::cube

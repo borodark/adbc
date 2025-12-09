@@ -42,3 +42,4 @@ checksum.exs
 /cmake_adbc_nif/
 /priv/
 
+/python/adbc_driver_cube/venv/

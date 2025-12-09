@@ -4,29 +4,11 @@
 #include <string>
 #include <vector>
 
+#include <arrow-adbc/adbc.h>
 #include "native_protocol.h"
 #include "arrow_reader.h"
 
 namespace adbc::cube {
-
-// Forward declaration
-struct AdbcError;
-
-enum class AdbcStatusCode : uint8_t {
-    ADBC_STATUS_OK = 0,
-    ADBC_STATUS_UNKNOWN = 1,
-    ADBC_STATUS_NOT_IMPLEMENTED = 2,
-    ADBC_STATUS_NOT_FOUND = 3,
-    ADBC_STATUS_ALREADY_EXISTS = 4,
-    ADBC_STATUS_INVALID_ARGUMENT = 5,
-    ADBC_STATUS_INVALID_STATE = 6,
-    ADBC_STATUS_INVALID_DATA = 7,
-    ADBC_STATUS_IO = 8,
-    ADBC_STATUS_CANCELLED = 9,
-    ADBC_STATUS_UNAUTHENTICATED = 10,
-    ADBC_STATUS_UNAUTHORIZED = 11,
-    ADBC_STATUS_TIMEOUT = 12,
-};
 
 /// Native client for connecting to Cube via custom Arrow IPC protocol
 class NativeClient {

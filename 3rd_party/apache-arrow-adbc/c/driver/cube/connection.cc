@@ -60,7 +60,7 @@ Status CubeConnectionImpl::Connect(struct AdbcError* error) {
 
     int port_num = std::stoi(port_);
     auto connect_status = native_client_->Connect(host_, port_num, error);
-    if (connect_status != AdbcStatusCode::ADBC_STATUS_OK) {
+    if (connect_status != ADBC_STATUS_OK) {
       native_client_.reset();
       return status::fmt::IO("Failed to connect via native protocol to {}:{}",
                              host_, port_);
@@ -73,9 +73,9 @@ Status CubeConnectionImpl::Connect(struct AdbcError* error) {
     }
 
     auto auth_status = native_client_->Authenticate(token_, database_, error);
-    if (auth_status != AdbcStatusCode::ADBC_STATUS_OK) {
+    if (auth_status != ADBC_STATUS_OK) {
       native_client_.reset();
-      return status::Unauthenticated("Authentication failed with native protocol");
+      return status::fmt::InvalidArgument("Authentication failed with native protocol");
     }
 
     connected_ = true;
@@ -139,19 +139,23 @@ Status CubeConnectionImpl::Disconnect(struct AdbcError* error) {
 }
 
 Status CubeConnectionImpl::ExecuteQuery(const std::string& query,
+                                       struct ArrowArrayStream* out,
                                        struct AdbcError* error) {
-  // TODO: Implement query execution against Cube SQL
-  // This would:
-  // 1. Send query to Cube SQL API
-  // 2. Receive Arrow IPC serialized results
-  // 3. Deserialize Arrow records
-  // 4. Return results via ArrowArrayStream
-
   if (!connected_) {
     return status::InvalidState("Connection not established");
   }
 
-  return status::Ok();
+  // Use native client if available (Arrow Native protocol)
+  if (native_client_) {
+    auto status_code = native_client_->ExecuteQuery(query, out, error);
+    if (status_code != ADBC_STATUS_OK) {
+      return status::fmt::InvalidState("Query execution failed");
+    }
+    return status::Ok();
+  }
+
+  // TODO: Add PostgreSQL wire protocol support via libpq
+  return status::NotImplemented("PostgreSQL wire protocol not yet implemented");
 }
 
 Status CubeConnectionImpl::GetTableSchema(const std::string& table_schema,

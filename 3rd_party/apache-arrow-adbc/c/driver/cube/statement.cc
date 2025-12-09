@@ -114,18 +114,16 @@ Result<int64_t> CubeStatementImpl::ExecuteQuery(struct ArrowArrayStream* out) {
     }
   }
 
-  // Execute query against Cube SQL via libpq
-  // TODO: When parameters present, use PQexecParams with param_c_values
-  // For now, use basic query execution
-  auto status_result = connection_->ExecuteQuery(query_, nullptr);
+  // Execute query against Cube SQL
+  // TODO: When parameters present, pass them to the query execution
+  struct AdbcError error = ADBC_ERROR_INIT;
+  auto status_result = connection_->ExecuteQuery(query_, out, &error);
   if (!status_result.ok()) {
+    if (error.message) {
+      error.release(&error);
+    }
     return status_result;
   }
-
-  // Create an Arrow array stream from results
-  // This is a placeholder - will be properly implemented with arrow_reader
-  // integration in the connection layer
-  out->release = nullptr;
 
   return -1L;  // Unknown number of affected rows
 }
@@ -137,17 +135,18 @@ Result<int64_t> CubeStatementImpl::ExecuteUpdate() {
 
 // CubeStatement implementation
 
-Status CubeStatement::ReleaseImpl() {
-  impl_.reset();
+Status CubeStatement::InitImpl(void* parent) {
+  // Store connection reference
+  auto* connection = reinterpret_cast<CubeConnection*>(parent);
+  if (connection && connection->impl_) {
+    connection_ = connection->impl_.get();
+  }
   return status::Ok();
 }
 
-Status CubeStatement::SetSqlQuery(const std::string& query) {
-  if (!impl_) {
-    impl_ = std::make_unique<CubeStatementImpl>(nullptr, query);
-  } else {
-    impl_->SetQuery(query);
-  }
+Status CubeStatement::ReleaseImpl() {
+  impl_.reset();
+  connection_ = nullptr;
   return status::Ok();
 }
 
@@ -195,6 +194,28 @@ Result<int64_t> CubeStatement::ExecuteQueryImpl(struct ArrowArrayStream* out) {
   return impl_->ExecuteQuery(out);
 }
 
+Result<int64_t> CubeStatement::ExecuteQueryImpl(QueryState& state,
+                                                 struct ArrowArrayStream* out) {
+  // Initialize impl with connection if not already done
+  if (!impl_) {
+    impl_ = std::make_unique<CubeStatementImpl>(connection_, state.query);
+  } else {
+    impl_->SetQuery(state.query);
+  }
+  return impl_->ExecuteQuery(out);
+}
+
+Result<int64_t> CubeStatement::ExecuteQueryImpl(PreparedState& state,
+                                                 struct ArrowArrayStream* out) {
+  // Initialize impl with connection if not already done
+  if (!impl_) {
+    impl_ = std::make_unique<CubeStatementImpl>(connection_, state.query);
+  } else {
+    impl_->SetQuery(state.query);
+  }
+  return impl_->ExecuteQuery(out);
+}
+
 Result<int64_t> CubeStatement::ExecuteUpdateImpl() {
   if (!impl_) {
     return status::InvalidState("Statement not initialized");
@@ -203,8 +224,27 @@ Result<int64_t> CubeStatement::ExecuteUpdateImpl() {
 }
 
 Status CubeStatement::SetOptionImpl(std::string_view key, driver::Option value) {
-  // Statement-specific options can be added here
-  return status::NotImplemented("Statement options not yet implemented");
+  // Handle standard ADBC statement options
+  if (key == ADBC_INGEST_OPTION_TARGET_TABLE) {
+    // Handle ingestion target table
+    auto str_result = value.AsString();
+    if (str_result.has_value()) {
+      // Store target table for bulk ingestion
+      return status::NotImplemented("Bulk ingestion not yet supported");
+    }
+    return status::InvalidArgument("Invalid value type for target_table");
+  }
+
+  if (key == ADBC_INGEST_OPTION_MODE) {
+    // Handle ingestion mode (append/create)
+    return status::NotImplemented("Bulk ingestion not yet supported");
+  }
+
+  // SQL queries should use set_sql_query() method, not set_options()
+  // The framework handles this through the separate SetSqlQuery() path
+
+  // Unknown option
+  return status::NotImplemented("Unknown statement option: ", key);
 }
 
 }  // namespace adbc::cube

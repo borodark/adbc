@@ -74,8 +74,8 @@ class CubeStatement : public driver::Statement<CubeStatement> {
 
   ~CubeStatement() = default;
 
+  Status InitImpl(void* parent);
   Status ReleaseImpl();
-  Status SetSqlQuery(const std::string& query);
   Status PrepareImpl(driver::Statement<CubeStatement>::QueryState& state);
   Status BindImpl(driver::Statement<CubeStatement>::QueryState& state);
   Status BindStreamImpl(driver::Statement<CubeStatement>::QueryState& state,
@@ -86,14 +86,10 @@ class CubeStatement : public driver::Statement<CubeStatement> {
 
   // Overloads for Query and Prepared state
   Result<int64_t> ExecuteQueryImpl(driver::Statement<CubeStatement>::QueryState& state,
-                                   struct ArrowArrayStream* out) {
-    return ExecuteQueryImpl(out);
-  }
+                                   struct ArrowArrayStream* out);
 
   Result<int64_t> ExecuteQueryImpl(driver::Statement<CubeStatement>::PreparedState& state,
-                                   struct ArrowArrayStream* out) {
-    return ExecuteQueryImpl(out);
-  }
+                                   struct ArrowArrayStream* out);
 
   Result<int64_t> ExecuteUpdateImpl(driver::Statement<CubeStatement>::QueryState& state) {
     return ExecuteUpdateImpl();
@@ -105,6 +101,8 @@ class CubeStatement : public driver::Statement<CubeStatement> {
 
   Status SetOptionImpl(std::string_view key, driver::Option value);
 
+ private:
+  CubeConnectionImpl* connection_ = nullptr;  // Non-owning
   std::unique_ptr<CubeStatementImpl> impl_;
 };
 

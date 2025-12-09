@@ -37,6 +37,7 @@
 #define ADBC_FRAMEWORK_USE_FMT
 #include "driver/framework/connection.h"
 #include "driver/framework/status.h"
+#include "driver/cube/native_client.h"
 
 namespace adbc::cube {
 
@@ -46,7 +47,6 @@ namespace status = adbc::driver::status;
 
 // Forward declarations
 class CubeDatabase;
-class NativeClient;
 
 // Connection mode enum
 enum class ConnectionMode {
@@ -66,7 +66,9 @@ class CubeConnectionImpl {
   bool IsConnected() const { return connected_; }
 
   // Query execution
-  Status ExecuteQuery(const std::string& query, struct AdbcError* error);
+  Status ExecuteQuery(const std::string& query,
+                      struct ArrowArrayStream* out,
+                      struct AdbcError* error);
 
   // Metadata queries
   Status GetTableSchema(const std::string& table_schema,

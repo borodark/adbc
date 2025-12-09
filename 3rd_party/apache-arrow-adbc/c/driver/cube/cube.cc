@@ -144,4 +144,52 @@ AdbcStatusCode AdbcStatementRelease(struct AdbcStatement* statement,
   return CubeDriver::CRelease<>(statement, error);
 }
 
+// Driver initialization function for ADBC driver manager
+ADBC_EXPORT
+AdbcStatusCode AdbcDriverInit(int version, void* raw_driver, struct AdbcError* error) {
+  if (version != ADBC_VERSION_1_1_0 && version != ADBC_VERSION_1_0_0) {
+    return ADBC_STATUS_NOT_IMPLEMENTED;
+  }
+
+  auto* driver = reinterpret_cast<struct AdbcDriver*>(raw_driver);
+  if (driver == nullptr) {
+    return ADBC_STATUS_INVALID_ARGUMENT;
+  }
+
+  std::memset(driver, 0, sizeof(*driver));
+
+  // Database functions
+  driver->DatabaseNew = AdbcDatabaseNew;
+  driver->DatabaseSetOption = AdbcDatabaseSetOption;
+  driver->DatabaseInit = AdbcDatabaseInit;
+  driver->DatabaseRelease = AdbcDatabaseRelease;
+
+  // Connection functions
+  driver->ConnectionNew = AdbcConnectionNew;
+  driver->ConnectionSetOption = AdbcConnectionSetOption;
+  driver->ConnectionInit = AdbcConnectionInit;
+  driver->ConnectionRelease = AdbcConnectionRelease;
+  driver->ConnectionGetInfo = CubeDriver::CConnectionGetInfo;
+  driver->ConnectionGetObjects = CubeDriver::CConnectionGetObjects;
+  driver->ConnectionGetTableSchema = CubeDriver::CConnectionGetTableSchema;
+  driver->ConnectionGetTableTypes = CubeDriver::CConnectionGetTableTypes;
+  driver->ConnectionReadPartition = CubeDriver::CConnectionReadPartition;
+  driver->ConnectionCommit = CubeDriver::CConnectionCommit;
+  driver->ConnectionRollback = CubeDriver::CConnectionRollback;
+  driver->ConnectionCancel = CubeDriver::CConnectionCancel;
+
+  // Statement functions
+  driver->StatementNew = AdbcStatementNew;
+  driver->StatementSetOption = AdbcStatementSetOption;
+  driver->StatementSetSqlQuery = CubeDriver::CStatementSetSqlQuery;
+  driver->StatementBind = AdbcStatementBind;
+  driver->StatementBindStream = AdbcStatementBindStream;
+  driver->StatementExecuteQuery = AdbcStatementExecuteQuery;
+  driver->StatementPrepare = AdbcStatementPrepare;
+  driver->StatementGetParameterSchema = AdbcStatementGetParameterSchema;
+  driver->StatementRelease = AdbcStatementRelease;
+
+  return ADBC_STATUS_OK;
+}
+
 }  // extern "C"

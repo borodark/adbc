@@ -57,6 +57,8 @@ add_arrow_lib(adbc_driver_cube
               parameter_converter.cc
               cube_types.cc
               metadata.cc
+              native_protocol.cc
+              native_client.cc
               OUTPUTS
               ADBC_LIBRARIES
               CMAKE_PACKAGE_NAME

@@ -16,8 +16,8 @@
 # under the License.
 
 # Find FlatBuffers library (system package)
-find_package(Flatbuffers REQUIRED)
-if(NOT Flatbuffers_FOUND)
+find_package(FlatBuffers REQUIRED)
+if(NOT FlatBuffers_FOUND)
   message(FATAL_ERROR "FlatBuffers not found. Install: sudo apt-get install libflatbuffers-dev")
 endif()
 
@@ -56,7 +56,9 @@ endif()
 # Generate FlatBuffer C++ headers from Arrow IPC schemas
 set(FLATBUFFER_SCHEMAS
     ${CMAKE_CURRENT_SOURCE_DIR}/format/Schema.fbs
-    ${CMAKE_CURRENT_SOURCE_DIR}/format/Message.fbs)
+    ${CMAKE_CURRENT_SOURCE_DIR}/format/Message.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/format/Tensor.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/format/SparseTensor.fbs)
 
 set(FLATBUFFER_GENERATED_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/format/generated/Schema_generated.h
@@ -98,12 +100,12 @@ add_arrow_lib(adbc_driver_cube
               adbc_driver_common
               adbc_driver_framework
               ${LIBPQ_LINK_LIBRARIES}
-              ${Flatbuffers_LIBRARIES}
+              ${FlatBuffers_LIBRARIES}
               STATIC_LINK_LIBS
               adbc_driver_common
               adbc_driver_framework
               ${LIBPQ_STATIC_LIBRARIES}
-              ${Flatbuffers_LIBRARIES})
+              ${FlatBuffers_LIBRARIES})
 
 foreach(LIB_TARGET ${ADBC_LIBRARIES})
   add_dependencies(${LIB_TARGET} generate_flatbuffer_headers)
@@ -111,7 +113,7 @@ foreach(LIB_TARGET ${ADBC_LIBRARIES})
   target_include_directories(${LIB_TARGET} SYSTEM
                              PRIVATE ${REPOSITORY_ROOT}/c/ ${REPOSITORY_ROOT}/c/include/
                                      ${REPOSITORY_ROOT}/c/driver ${LIBPQ_INCLUDE_DIRS}
-                                     ${Flatbuffers_INCLUDE_DIRS}
+                                     ${FlatBuffers_INCLUDE_DIRS}
                                      ${CMAKE_CURRENT_SOURCE_DIR}/format/generated)
 
   if(NOT ADBC_DEFINE_COMMON_ENTRYPOINTS)

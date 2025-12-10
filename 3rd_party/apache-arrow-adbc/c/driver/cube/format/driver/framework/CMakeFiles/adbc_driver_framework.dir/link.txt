@@ -1,0 +1,2 @@
+/usr/bin/ar qc libadbc_driver_framework.a CMakeFiles/adbc_driver_framework.dir/objects.cc.o CMakeFiles/adbc_driver_framework.dir/utility.cc.o
+/usr/bin/ranlib libadbc_driver_framework.a

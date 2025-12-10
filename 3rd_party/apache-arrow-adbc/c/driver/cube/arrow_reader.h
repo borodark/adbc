@@ -25,12 +25,12 @@
 #include <arrow-adbc/adbc.h>
 #include <nanoarrow/nanoarrow.h>
 
-namespace adbc::cube {
-
-// Forward declarations for FlatBuffer types
+// Forward declaration for FlatBuffer types (in global namespace)
 namespace org { namespace apache { namespace arrow { namespace flatbuf {
   struct RecordBatch;
 } } } }
+
+namespace adbc::cube {
 
 // Helper class to deserialize Arrow IPC format results from Cube SQL
 class CubeArrowReader {

@@ -195,7 +195,6 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string& sql,
     // which PyArrow sees as two separate streams.
     std::vector<uint8_t> arrow_ipc_data;
     bool query_complete = false;
-    int64_t rows_affected = 0;
 
     while (!query_complete) {
         auto response_data = ReadMessage(error);
@@ -228,7 +227,8 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string& sql,
                 case MessageType::QueryComplete: {
                     auto response = QueryComplete::Decode(
                         response_data.data() + 4, response_data.size() - 4);
-                    rows_affected = response->rows_affected;
+                    // rows_affected = response->rows_affected;  // Unused for now
+                    (void)response;  // Suppress unused variable warning
                     query_complete = true;
                     break;
                 }
@@ -267,10 +267,8 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string& sql,
         memset(&arrow_error, 0, sizeof(arrow_error));  // Initialize to zeros
         auto init_status = reader->Init(&arrow_error);
         if (init_status != NANOARROW_OK) {
-            std::string error_msg = "Failed to initialize Arrow reader";
-            if (arrow_error.message) {
-                error_msg += ": " + std::string(arrow_error.message);
-            }
+            std::string error_msg = "Failed to initialize Arrow reader: ";
+            error_msg += arrow_error.message;
             SetNativeClientError(error, error_msg);
             fprintf(stderr, "[NativeClient::ExecuteQuery] Init failed with status %d: %s\n",
                     init_status, error_msg.c_str());

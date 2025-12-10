@@ -295,16 +295,14 @@ bool CubeArrowReader::GetBit(const uint8_t* bitmap, int64_t index) {
 
 // Map FlatBuffer Type enum to nanoarrow type
 int CubeArrowReader::MapFlatBufferTypeToArrow(int fb_type) {
-  using namespace org::apache::arrow::flatbuf;
-
-  switch (static_cast<Type>(fb_type)) {
-    case Type_Int:
+  switch (fb_type) {
+    case org::apache::arrow::flatbuf::Type_Int:
       return NANOARROW_TYPE_INT64;  // Assume INT64 for now
-    case Type_FloatingPoint:
+    case org::apache::arrow::flatbuf::Type_FloatingPoint:
       return NANOARROW_TYPE_DOUBLE;
-    case Type_Bool:
+    case org::apache::arrow::flatbuf::Type_Bool:
       return NANOARROW_TYPE_BOOL;
-    case Type_Utf8:
+    case org::apache::arrow::flatbuf::Type_Utf8:
       return NANOARROW_TYPE_STRING;
     default:
       fprintf(stderr, "[MapFlatBufferTypeToArrow] Unsupported type: %d\n", fb_type);
@@ -362,13 +360,13 @@ ArrowErrorCode CubeArrowReader::ParseSchemaFlatBuffer(
 
   // Verify FlatBuffer
   flatbuffers::Verifier verifier(fb_data, fb_size);
-  if (!org::apache::arrow::flatbuf::VerifyMessageBuffer(verifier)) {
+  if (!::org::apache::arrow::flatbuf::VerifyMessageBuffer(verifier)) {
     ArrowErrorSet(error, "Invalid Schema FlatBuffer");
     return EINVAL;
   }
 
-  auto message = org::apache::arrow::flatbuf::GetMessage(fb_data);
-  if (!message || message->header_type() != org::apache::arrow::flatbuf::MessageHeader_Schema) {
+  auto message = ::org::apache::arrow::flatbuf::GetMessage(fb_data);
+  if (!message || message->header_type() != ::org::apache::arrow::flatbuf::MessageHeader_Schema) {
     ArrowErrorSet(error, "Not a Schema message");
     return EINVAL;
   }
@@ -445,13 +443,13 @@ ArrowErrorCode CubeArrowReader::ParseRecordBatchFlatBuffer(
 
   // Verify FlatBuffer
   flatbuffers::Verifier verifier(fb_data, fb_size);
-  if (!org::apache::arrow::flatbuf::VerifyMessageBuffer(verifier)) {
+  if (!::org::apache::arrow::flatbuf::VerifyMessageBuffer(verifier)) {
     ArrowErrorSet(error, "Invalid RecordBatch FlatBuffer");
     return EINVAL;
   }
 
-  auto message = org::apache::arrow::flatbuf::GetMessage(fb_data);
-  if (!message || message->header_type() != org::apache::arrow::flatbuf::MessageHeader_RecordBatch) {
+  auto message = ::org::apache::arrow::flatbuf::GetMessage(fb_data);
+  if (!message || message->header_type() != ::org::apache::arrow::flatbuf::MessageHeader_RecordBatch) {
     ArrowErrorSet(error, "Not a RecordBatch message");
     return EINVAL;
   }
@@ -516,7 +514,7 @@ ArrowErrorCode CubeArrowReader::BuildArrayForField(
   }
 
   int arrow_type = field_types_[field_index];
-  int buffer_count = GetBufferCountForType(arrow_type);
+  // int buffer_count = GetBufferCountForType(arrow_type);  // Unused for now
 
   // Extract validity buffer
   const uint8_t* validity_buffer = nullptr;
@@ -658,8 +656,7 @@ ArrowErrorCode CubeArrowReader::BuildArrayForField(
 static int CubeArrowStreamGetSchema(struct ArrowArrayStream* stream, struct ArrowSchema* out) {
   fprintf(stderr, "[CubeArrowStreamGetSchema] Called\n");
   auto* reader = static_cast<CubeArrowReader*>(stream->private_data);
-  fprintf(stderr, "[CubeArrowStreamGetSchema] Reader pointer: %p\n", reader);
-  ArrowError error;
+  fprintf(stderr, "[CubeArrowStreamGetSchema] Reader pointer: %p\n", static_cast<void*>(reader));
   auto status = reader->GetSchema(out);
   fprintf(stderr, "[CubeArrowStreamGetSchema] Returning status: %d\n", status);
   return status;
@@ -668,8 +665,7 @@ static int CubeArrowStreamGetSchema(struct ArrowArrayStream* stream, struct Arro
 static int CubeArrowStreamGetNext(struct ArrowArrayStream* stream, struct ArrowArray* out) {
   fprintf(stderr, "[CubeArrowStreamGetNext] Called\n");
   auto* reader = static_cast<CubeArrowReader*>(stream->private_data);
-  fprintf(stderr, "[CubeArrowStreamGetNext] Reader pointer: %p\n", reader);
-  ArrowError error;
+  fprintf(stderr, "[CubeArrowStreamGetNext] Reader pointer: %p\n", static_cast<void*>(reader));
   auto status = reader->GetNext(out);
   fprintf(stderr, "[CubeArrowStreamGetNext] Status: %d\n", status);
   if (status == ENOMSG) {

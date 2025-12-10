@@ -19,12 +19,18 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <arrow-adbc/adbc.h>
 #include <nanoarrow/nanoarrow.h>
 
 namespace adbc::cube {
+
+// Forward declarations for FlatBuffer types
+namespace org { namespace apache { namespace arrow { namespace flatbuf {
+  struct RecordBatch;
+} } } }
 
 // Helper class to deserialize Arrow IPC format results from Cube SQL
 class CubeArrowReader {
@@ -64,11 +70,46 @@ class CubeArrowReader {
                                           ArrowArray* out,
                                           ArrowError* error);
 
+  // FlatBuffer parsing methods
+  ArrowErrorCode ParseSchemaFlatBuffer(const uint8_t* fb_data,
+                                       int64_t fb_size,
+                                       ArrowError* error);
+
+  ArrowErrorCode ParseRecordBatchFlatBuffer(const uint8_t* fb_data,
+                                            int64_t fb_size,
+                                            const uint8_t* body_data,
+                                            int64_t body_size,
+                                            ArrowArray* out,
+                                            ArrowError* error);
+
+  ArrowErrorCode BuildArrayForField(int field_index,
+                                    int64_t row_count,
+                                    const org::apache::arrow::flatbuf::RecordBatch* batch,
+                                    const uint8_t* body_data,
+                                    int* buffer_index_inout,
+                                    ArrowArray* out,
+                                    ArrowError* error);
+
+  void ExtractBuffer(const org::apache::arrow::flatbuf::RecordBatch* batch,
+                    int buffer_index,
+                    const uint8_t* body_data,
+                    const uint8_t** out_ptr,
+                    int64_t* out_size);
+
+  int MapFlatBufferTypeToArrow(int fb_type);
+  int GetBufferCountForType(int arrow_type);
+  static bool GetBit(const uint8_t* bitmap, int64_t index);
+
   std::vector<uint8_t> buffer_;           // Raw Arrow IPC bytes
   int64_t offset_ = 0;                    // Current position in buffer
   struct ArrowSchema schema_;              // Parsed schema
   bool schema_initialized_ = false;        // Whether schema has been parsed
   bool finished_ = false;                  // Whether we've reached end of stream
+
+  // Schema metadata (parsed from FlatBuffer)
+  std::vector<std::string> field_names_;
+  std::vector<int> field_types_;
+  std::vector<bool> field_nullable_;
 };
 
 }  // namespace adbc::cube

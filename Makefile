@@ -37,9 +37,10 @@ endif
 
 CMAKE_BUILD_TYPE ?= Release
 DEFAULT_JOBS ?= 1
-CMAKE_ADBC_BUILD_DIR = $(MIX_APP_PATH)/cmake_adbc
+BUILD_DIR = $(MIX_APP_PATH)/_build
+CMAKE_ADBC_BUILD_DIR = $(BUILD_DIR)/cmake/adbc
 CMAKE_ADBC_OPTIONS ?=
-CMAKE_ADBC_NIF_BUILD_DIR = $(MIX_APP_PATH)/cmake_adbc_nif
+CMAKE_ADBC_NIF_BUILD_DIR = $(BUILD_DIR)/cmake/nif
 CMAKE_ADBC_NIF_OPTIONS ?=
 MAKE_BUILD_FLAGS ?= -j$(DEFAULT_JOBS)
 
@@ -53,8 +54,7 @@ build: $(NIF_SO_REL) $(ADBC_DRIVER_CUBE_LIB)
 clean:
 	@rm -rf "$(NIF_SO_REL)"
 	@rm -rf "$(NIF_SO)"
-	@rm -rf "$(CMAKE_ADBC_NIF_BUILD_DIR)"
-	@rm -rf "$(CMAKE_ADBC_BUILD_DIR)"
+	@rm -rf "$(BUILD_DIR)"
 	@rm -rf "$(PRIV_DIR)"
 
 priv_dir:
@@ -72,6 +72,7 @@ adbc: priv_dir
 		cmake --no-warn-unused-cli \
 			-DADBC_BUILD_SHARED="ON" \
 			-DADBC_DRIVER_MANAGER="ON" \
+			-DADBC_DRIVER_CUBE="ON" \
 			-DADBC_DRIVER_POSTGRESQL="OFF" \
 			-DADBC_DRIVER_SQLITE="OFF" \
 			-DADBC_DRIVER_FLIGHTSQL="OFF" \
@@ -90,10 +91,8 @@ adbc: priv_dir
 $(ADBC_DRIVER_CUBE_LIB): adbc
 	@ if [ ! -f "$(ADBC_DRIVER_CUBE_LIB)" ]; then \
 		cd "$(CMAKE_ADBC_BUILD_DIR)" && \
-		cmake --no-warn-unused-cli \
-			-DADBC_DRIVER_CUBE="ON" \
-			$(CMAKE_CONFIGURE_FLAGS) $(CMAKE_ADBC_OPTIONS) "$(ADBC_C_SRC)" && \
-		cmake --build . --target adbc_driver_cube_shared --target install -j ; \
+		cmake --build . --target adbc_driver_cube_shared -j && \
+		cmake --install . ; \
 	fi
 
 .PHONY: cube_driver

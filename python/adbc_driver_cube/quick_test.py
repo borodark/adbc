@@ -10,7 +10,8 @@ print("=" * 60)
 # Check library
 print("\n1. Checking C driver library...")
 lib_paths = [
-    "/home/io/projects/learn_erl/adbc/cmake_adbc/driver/cube/libadbc_driver_cube.so",
+    "/home/io/projects/learn_erl/adbc/priv/lib/libadbc_driver_cube.so",
+    "/home/io/projects/learn_erl/adbc/_build/cmake/adbc/driver/cube/libadbc_driver_cube.so",
     "/usr/local/lib/libadbc_driver_cube.so",
 ]
 

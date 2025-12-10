@@ -15,6 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Find FlatBuffers library (system package)
+find_package(Flatbuffers REQUIRED)
+if(NOT Flatbuffers_FOUND)
+  message(FATAL_ERROR "FlatBuffers not found. Install: sudo apt-get install libflatbuffers-dev")
+endif()
+
 # Find libpq for PostgreSQL protocol support
 if(WIN32)
   # XXX: for now, assume vcpkg
@@ -47,6 +53,27 @@ else()
   endif()
 endif()
 
+# Generate FlatBuffer C++ headers from Arrow IPC schemas
+set(FLATBUFFER_SCHEMAS
+    ${CMAKE_CURRENT_SOURCE_DIR}/format/Schema.fbs
+    ${CMAKE_CURRENT_SOURCE_DIR}/format/Message.fbs)
+
+set(FLATBUFFER_GENERATED_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/format/generated/Schema_generated.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/format/generated/Message_generated.h)
+
+add_custom_command(
+    OUTPUT ${FLATBUFFER_GENERATED_HEADERS}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/format/generated
+    COMMAND flatc --cpp --gen-mutable --gen-object-api
+            -o ${CMAKE_CURRENT_SOURCE_DIR}/format/generated
+            ${FLATBUFFER_SCHEMAS}
+    DEPENDS ${FLATBUFFER_SCHEMAS}
+    COMMENT "Generating FlatBuffer C++ headers"
+    VERBATIM)
+
+add_custom_target(generate_flatbuffer_headers DEPENDS ${FLATBUFFER_GENERATED_HEADERS})
+
 add_arrow_lib(adbc_driver_cube
               SOURCES
               cube.cc
@@ -71,16 +98,21 @@ add_arrow_lib(adbc_driver_cube
               adbc_driver_common
               adbc_driver_framework
               ${LIBPQ_LINK_LIBRARIES}
+              ${Flatbuffers_LIBRARIES}
               STATIC_LINK_LIBS
               adbc_driver_common
               adbc_driver_framework
-              ${LIBPQ_STATIC_LIBRARIES})
+              ${LIBPQ_STATIC_LIBRARIES}
+              ${Flatbuffers_LIBRARIES})
 
 foreach(LIB_TARGET ${ADBC_LIBRARIES})
+  add_dependencies(${LIB_TARGET} generate_flatbuffer_headers)
   target_compile_definitions(${LIB_TARGET} PRIVATE ADBC_EXPORTING)
   target_include_directories(${LIB_TARGET} SYSTEM
                              PRIVATE ${REPOSITORY_ROOT}/c/ ${REPOSITORY_ROOT}/c/include/
-                                     ${REPOSITORY_ROOT}/c/driver ${LIBPQ_INCLUDE_DIRS})
+                                     ${REPOSITORY_ROOT}/c/driver ${LIBPQ_INCLUDE_DIRS}
+                                     ${Flatbuffers_INCLUDE_DIRS}
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/format/generated)
 
   if(NOT ADBC_DEFINE_COMMON_ENTRYPOINTS)
     target_compile_definitions(${LIB_TARGET} PRIVATE ${ADBC_TARGET_COMPILE_DEFINITIONS})

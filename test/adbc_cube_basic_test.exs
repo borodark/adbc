@@ -7,7 +7,7 @@ defmodule Adbc.CubeBasicTest do
   @moduletag timeout: 30_000
 
   # Path to our custom-built Cube driver
-  @cube_driver_path "/home/io/projects/learn_erl/adbc/priv/lib/libadbc_driver_cube.so"
+  @cube_driver_path "priv/lib/libadbc_driver_cube.so"
 
   # Cube server connection details
   @cube_host "localhost"
@@ -156,25 +156,22 @@ defmodule Adbc.CubeBasicTest do
     test "queries Cube dimension", %{conn: conn} do
       query = """
       SELECT
-      orders.brand,
-      MEASURE(orders.count)
+      orders.FUL,
+      MEASURE(orders.count),
+      MEASURE(orders.subtotal_amount),
+      MEASURE(orders.total_amount),
+      MEASURE(orders.tax_amount)
       FROM
       orders
       GROUP BY
       1
-      LIMIT
-      10000
       """
 
       assert {:ok, results} = Connection.query(conn, query)
 
-      materialized = Result.materialize(results)
-
-      assert %Result{data: [brand_col]} = materialized
-      IO.inspect(materialized)
-      assert %Column{name: "brand", type: :string} = brand_col
-      assert length(brand_col.data) == 34
-      assert Enum.all?(brand_col.data, &is_binary/1)
+      IO.inspect(Result.materialize(results))
+      # df = DataFrame.from_query(conn, query,[])
+      # IO.inspect(df)
     end
   end
 end

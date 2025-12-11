@@ -15,4 +15,9 @@ windows_exclude =
     _ -> []
   end
 
-ExUnit.start(exclude: pg_exclude ++ windows_exclude)
+# Cube tests are excluded by default since they require a running cubesqld server
+# Run with: mix test --include cube
+# Or use: test/run_cube_tests.sh
+cube_exclude = [:cube]
+
+ExUnit.start(exclude: pg_exclude ++ windows_exclude ++ cube_exclude)

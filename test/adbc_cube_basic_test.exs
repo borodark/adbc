@@ -40,26 +40,25 @@ defmodule Adbc.CubeBasicTest do
         raise "Failed to connect to Cube server: #{inspect(reason)}"
     end
 
+    # Start connection pool for all tests
+    pool_opts = [
+      pool_size: 4,
+      driver_path: @cube_driver_path,
+      host: @cube_host,
+      port: @cube_port,
+      token: @cube_token
+    ]
+
+    {:ok, _pid} = start_supervised({Adbc.CubeTestPool, pool_opts})
+
     :ok
   end
 
   setup do
-    # Start database with custom Cube driver
-    # Note: All options must use the "adbc.cube.*" prefix
-    db =
-      start_supervised!(
-        {Adbc.Database,
-         driver: @cube_driver_path,
-         "adbc.cube.host": @cube_host,
-         "adbc.cube.port": Integer.to_string(@cube_port),
-         "adbc.cube.connection_mode": "native",
-         "adbc.cube.token": @cube_token}
-      )
+    # Get a connection from the pool for this test
+    conn = Adbc.CubeTestPool.get_connection()
 
-    # Start connection
-    conn = start_supervised!({Connection, database: db})
-
-    %{db: db, conn: conn}
+    %{conn: conn}
   end
 
   describe "basic connectivity" do
@@ -172,6 +171,53 @@ defmodule Adbc.CubeBasicTest do
       IO.inspect(Result.materialize(results))
       # df = DataFrame.from_query(conn, query,[])
       # IO.inspect(df)
+    end
+  end
+
+  describe "connection pool" do
+    test "pool provides multiple connections" do
+      pool_size = Adbc.CubeTestPool.get_pool_size()
+      assert pool_size == 4
+    end
+
+    test "can get specific connection from pool" do
+      conn1 = Adbc.CubeTestPool.get_connection(1)
+      conn2 = Adbc.CubeTestPool.get_connection(2)
+
+      assert is_pid(conn1)
+      assert is_pid(conn2)
+      assert conn1 != conn2
+    end
+
+    test "concurrent queries work with pool" do
+      # Run multiple queries concurrently
+      tasks =
+        for i <- 1..10 do
+          Task.async(fn ->
+            conn = Adbc.CubeTestPool.get_connection()
+            Connection.query(conn, "SELECT #{i} as num")
+          end)
+        end
+
+      results = Task.await_many(tasks, 10_000)
+
+      # All should succeed
+      assert Enum.all?(results, fn
+               {:ok, _} -> true
+               _ -> false
+             end)
+
+      # Extract values
+      values =
+        results
+        |> Enum.map(fn {:ok, result} ->
+          %Result{data: [%Column{data: [value]}]} = Result.materialize(result)
+          value
+        end)
+        |> Enum.sort()
+
+      # Should get all values 1..10
+      assert values == Enum.to_list(1..10)
     end
   end
 end

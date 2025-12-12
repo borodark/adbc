@@ -14,7 +14,6 @@ defmodule Adbc.MixProject do
       app: :adbc,
       version: @version,
       elixir: "~> 1.14",
-      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
@@ -23,10 +22,6 @@ defmodule Adbc.MixProject do
       compilers: [:elixir_make] ++ Mix.compilers()
     ] ++ precompiled()
   end
-
-  # Specifies which paths to compile per environment
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib"]
 
   defp precompiled do
     if System.get_env("ADBC_BUILD") in ["1", "true"] do
@@ -85,6 +80,7 @@ defmodule Adbc.MixProject do
       # runtime
       {:decimal, "~> 2.1"},
       {:table, "~> 0.1.2"},
+
       # docs
       {:ex_doc, "~> 0.29", only: :docs, runtime: false}
     ]

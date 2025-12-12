@@ -36,5 +36,3 @@ adbc-*.tar
 
 # checksum
 checksum.exs
-
-**/CMakeFiles/

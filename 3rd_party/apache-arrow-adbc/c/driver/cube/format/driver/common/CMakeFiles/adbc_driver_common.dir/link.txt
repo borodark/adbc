@@ -1,2 +1,0 @@
-/usr/bin/ar qc libadbc_driver_common.a CMakeFiles/adbc_driver_common.dir/utils.c.o
-/usr/bin/ranlib libadbc_driver_common.a

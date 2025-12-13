@@ -83,6 +83,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Flatbuffers using Homebrew
+        run: brew install flatbuffers
+
       - name: Install OTP and Elixir
         run: |
           curl -fsSO https://elixir-lang.org/install.sh

@@ -1,6 +1,17 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 project(adbc_nif C CXX)
 
+# Find the FlatBuffers package
+find_package(FlatBuffers CONFIG REQUIRED)
+
+# Print the directory where the config file was found
+if(FlatBuffers_FOUND)
+    message(STATUS "FlatBuffers found in directory: ${FlatBuffers_DIR}")
+    message(STATUS "FlatBuffers config file path: ${FlatBuffers_CONFIG}")
+else()
+    message(FATAL_ERROR "Could not find FlatBuffers package")
+endif()
+
 if(NOT DEFINED PRIV_DIR)
     if(DEFINED MIX_APP_PATH AND NOT "${MIX_APP_PATH}" STREQUAL "")
         if(WIN32)
@@ -41,6 +52,7 @@ else()
     message(STATUS "CMAKE_TOOLCHAIN_FILE: not set")
 endif()
 
+include_directories(/usr/lib/x86_64-linux-gnu/cmake/flatbuffers)
 find_package(AdbcDriverManager REQUIRED PATHS "${PRIV_DIR}/" NO_DEFAULT_PATH)
 include_directories("${PRIV_DIR}/include")
 

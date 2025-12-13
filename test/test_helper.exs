@@ -20,4 +20,4 @@ windows_exclude =
 # Or use: test/run_cube_tests.sh
 cube_exclude = [:cube]
 
-ExUnit.start(exclude: pg_exclude ++ windows_exclude)
+ExUnit.start(exclude: pg_exclude ++ windows_exclude ++ cube_exclude)

@@ -45,8 +45,6 @@ jobs:
 
       - name: Compile and Test
         run: |
-          cd / && find -name FlatBuffersConfig.cmake
-          export FlatBuffers_CONFIG=`cd / && find -name FlatBuffersConfig.cmake`
           mix deps.get
           mix test
 

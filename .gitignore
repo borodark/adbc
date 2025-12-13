@@ -43,3 +43,4 @@ checksum.exs
 /priv/
 
 /python/adbc_driver_cube/venv/
+**/CMakeFiles/*

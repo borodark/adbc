@@ -45,6 +45,11 @@ jobs:
           sudo apt-get update && sudo apt-get install -y build-essential libflatbuffers-dev
           cd /usr && find . -name FlatBuffersConfig.cmake
 
+      - name: finding Nemo
+        run: |
+          cd /usr
+          find . -name FlatBuffersConfig.cmake
+          find . -name  flatbuffers-config.cmake
       - name: Compile and Test
         run: |
           mix deps.get

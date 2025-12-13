@@ -52,7 +52,6 @@ else()
     message(STATUS "CMAKE_TOOLCHAIN_FILE: not set")
 endif()
 
-include_directories(/usr/lib/x86_64-linux-gnu/cmake/flatbuffers)
 find_package(AdbcDriverManager REQUIRED PATHS "${PRIV_DIR}/" NO_DEFAULT_PATH)
 include_directories("${PRIV_DIR}/include")
 
@@ -102,6 +101,7 @@ if(WIN32)
 endif()
 
 if(UNIX AND NOT APPLE)
+    include_directories(/usr/lib/x86_64-linux-gnu/cmake/flatbuffers)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-but-set-variable -Wno-reorder")
     set_target_properties(adbc_nif PROPERTIES INSTALL_RPATH "\$ORIGIN/lib")
 elseif(UNIX AND APPLE)

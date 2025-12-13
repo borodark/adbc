@@ -7,7 +7,7 @@ defmodule Adbc.CubeBasicTest do
   @moduletag timeout: 30_000
 
   # Path to our custom-built Cube driver
-  @cube_driver_path "priv/lib/libadbc_driver_cube.so"
+  @cube_driver_path Path.join(:code.priv_dir(:adbc),"lib/libadbc_driver_cube.so")
 
   # Cube server connection details
   @cube_host "localhost"

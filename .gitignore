@@ -42,3 +42,5 @@ checksum.exs
 /cmake_adbc/
 /cmake_adbc_nif/
 **/CMakeFiles/*
+cmake_install.cmake
+CTestTestfile.cmake

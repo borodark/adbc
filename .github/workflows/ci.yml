@@ -45,6 +45,7 @@ jobs:
 
       - name: Compile and Test
         run: |
+          FlatBuffers_DIR="/lib/x86_64-linux-gnu/cmake/flatbuffers"
           mix deps.get
           mix test
 

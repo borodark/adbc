@@ -85,7 +85,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Flatbuffers using Homebrew
-        run: brew install flatbuffers
+        run: brew install gcc flatbuffers
 
       - name: Install OTP and Elixir
         run: |

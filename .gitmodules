@@ -1,0 +1,3 @@
+[submodule "3rd_party/apache-arrow-adbc/c/vendor/flatbuffers"]
+	path = 3rd_party/apache-arrow-adbc/c/vendor/flatbuffers
+	url = git@github.com:google/flatbuffers.git

@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 project(adbc_nif C CXX)
 
+add_subdirectory(3rd_party/apache-arrow-adbc/c/vendor/flatbuffers)
+
 if(NOT DEFINED PRIV_DIR)
     if(DEFINED MIX_APP_PATH AND NOT "${MIX_APP_PATH}" STREQUAL "")
         if(WIN32)

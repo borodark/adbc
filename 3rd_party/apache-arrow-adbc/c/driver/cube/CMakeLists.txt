@@ -16,6 +16,9 @@
 # under the License.
 
 # Find FlatBuffers library (system package)
+
+# Define the path to your FlatBuffers source directory
+
 find_package(FlatBuffers REQUIRED)
 if(NOT FlatBuffers_FOUND)
   message(FATAL_ERROR "FlatBuffers not found. Install: sudo apt-get install libflatbuffers-dev")

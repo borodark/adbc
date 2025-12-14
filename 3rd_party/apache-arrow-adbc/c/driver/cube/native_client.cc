@@ -1,3 +1,14 @@
+// Set to 1 to enable debug logging
+#ifndef CUBE_DEBUG_LOGGING
+#define CUBE_DEBUG_LOGGING 0
+#endif
+
+#if CUBE_DEBUG_LOGGING
+#define DEBUG_LOG(...) DEBUG_LOG( __VA_ARGS__)
+#else
+#define DEBUG_LOG(...) ((void)0)
+#endif
+
 #include "native_client.h"
 
 #include <arpa/inet.h>
@@ -210,7 +221,7 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string& sql,
             switch (msg_type) {
                 case MessageType::QueryResponseSchema: {
                     // Skip schema-only message - we'll get schema from batch
-                    fprintf(stderr, "[NativeClient::ExecuteQuery] Skipping schema-only message\n");
+                    DEBUG_LOG( "[NativeClient::ExecuteQuery] Skipping schema-only message\n");
                     break;
                 }
 
@@ -219,7 +230,7 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string& sql,
                         response_data.data() + 4, response_data.size() - 4);
                     // Use only batch data (contains both schema and data)
                     arrow_ipc_data = std::move(response->arrow_ipc_batch);
-                    fprintf(stderr, "[NativeClient::ExecuteQuery] Got batch data: %zu bytes\n",
+                    DEBUG_LOG( "[NativeClient::ExecuteQuery] Got batch data: %zu bytes\n",
                             arrow_ipc_data.size());
                     break;
                 }
@@ -270,22 +281,22 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string& sql,
             std::string error_msg = "Failed to initialize Arrow reader: ";
             error_msg += arrow_error.message;
             SetNativeClientError(error, error_msg);
-            fprintf(stderr, "[NativeClient::ExecuteQuery] Init failed with status %d: %s\n",
+            DEBUG_LOG( "[NativeClient::ExecuteQuery] Init failed with status %d: %s\n",
                     init_status, error_msg.c_str());
             return ADBC_STATUS_INTERNAL;
         }
 
         // Export to ArrowArrayStream
-        fprintf(stderr, "[NativeClient::ExecuteQuery] Exporting to ArrowArrayStream...\n");
+        DEBUG_LOG( "[NativeClient::ExecuteQuery] Exporting to ArrowArrayStream...\n");
         reader->ExportTo(out);
-        fprintf(stderr, "[NativeClient::ExecuteQuery] Export complete\n");
+        DEBUG_LOG( "[NativeClient::ExecuteQuery] Export complete\n");
 
         // Reader ownership transferred to ArrowArrayStream
         reader.release();
 
     } catch (const std::exception& e) {
         SetNativeClientError(error, "Failed to parse Arrow IPC data: " + std::string(e.what()));
-        fprintf(stderr, "[NativeClient::ExecuteQuery] Exception: %s\n", e.what());
+        DEBUG_LOG( "[NativeClient::ExecuteQuery] Exception: %s\n", e.what());
         return ADBC_STATUS_INVALID_DATA;
     }
 

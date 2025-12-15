@@ -63,20 +63,20 @@ typedef enum {
 } ExecStatusType;
 
 // Stub functions for libpq
-PGconn* PQconnectdb(const char* conninfo);
-ConnStatusType PQstatus(const PGconn* conn);
-const char* PQerrorMessage(const PGconn* conn);
-void PQfinish(PGconn* conn);
+PGconn *PQconnectdb(const char *conninfo);
+ConnStatusType PQstatus(const PGconn *conn);
+const char *PQerrorMessage(const PGconn *conn);
+void PQfinish(PGconn *conn);
 
-PGresult* PQexec(PGconn* conn, const char* query);
-PGresult* PQexecParams(PGconn* conn, const char* command,
-                       int nParams, const char* const* paramValues);
-void PQclear(PGresult* res);
-ExecStatusType PQresultStatus(const PGresult* res);
-int PQntuples(const PGresult* res);
-int PQnfields(const PGresult* res);
-const char* PQfname(const PGresult* res, int field_num);
-const char* PQgetvalue(const PGresult* res, int tup_num, int field_num);
+PGresult *PQexec(PGconn *conn, const char *query);
+PGresult *PQexecParams(PGconn *conn, const char *command, int nParams,
+                       const char *const *paramValues);
+void PQclear(PGresult *res);
+ExecStatusType PQresultStatus(const PGresult *res);
+int PQntuples(const PGresult *res);
+int PQnfields(const PGresult *res);
+const char *PQfname(const PGresult *res, int field_num);
+const char *PQgetvalue(const PGresult *res, int tup_num, int field_num);
 
 #ifdef __cplusplus
 }

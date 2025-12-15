@@ -30,22 +30,23 @@
 
 namespace adbc::cube {
 
-CubeStatementImpl::CubeStatementImpl(CubeConnectionImpl* connection,
-                                   std::string query)
+CubeStatementImpl::CubeStatementImpl(CubeConnectionImpl *connection,
+                                     std::string query)
     : connection_(connection), query_(std::move(query)) {}
 
-Status CubeStatementImpl::Prepare(struct AdbcError* error) {
+Status CubeStatementImpl::Prepare(struct AdbcError *error) {
   // TODO: Implement statement preparation
   // This would validate the query and get parameter info from Cube
   prepared_ = true;
   return status::Ok();
 }
 
-Status CubeStatementImpl::Bind(struct ArrowArray* values,
-                              struct ArrowSchema* schema,
-                              struct AdbcError* error) {
+Status CubeStatementImpl::Bind(struct ArrowArray *values,
+                               struct ArrowSchema *schema,
+                               struct AdbcError *error) {
   if (!values || !schema) {
-    return status::InvalidArgument("Parameter values and schema cannot be null");
+    return status::InvalidArgument(
+        "Parameter values and schema cannot be null");
   }
 
   // Store parameter array and schema for later use
@@ -56,8 +57,8 @@ Status CubeStatementImpl::Bind(struct ArrowArray* values,
   return status::Ok();
 }
 
-Status CubeStatementImpl::BindStream(struct ArrowArrayStream* values,
-                                    struct AdbcError* error) {
+Status CubeStatementImpl::BindStream(struct ArrowArrayStream *values,
+                                     struct AdbcError *error) {
   if (!values) {
     return status::InvalidArgument("Parameter stream cannot be null");
   }
@@ -82,7 +83,7 @@ Status CubeStatementImpl::BindStream(struct ArrowArrayStream* values,
   return status::Ok();
 }
 
-Result<int64_t> CubeStatementImpl::ExecuteQuery(struct ArrowArrayStream* out) {
+Result<int64_t> CubeStatementImpl::ExecuteQuery(struct ArrowArrayStream *out) {
   if (!connection_) {
     return status::InvalidState("Connection not initialized");
   }
@@ -97,8 +98,8 @@ Result<int64_t> CubeStatementImpl::ExecuteQuery(struct ArrowArrayStream* out) {
 
   // If parameters are bound, convert them to PostgreSQL text format
   std::vector<std::string> param_values;
-  const char** param_c_values = nullptr;
-  std::unique_ptr<char*[], decltype(&free)> param_cleanup(nullptr, &free);
+  const char **param_c_values = nullptr;
+  std::unique_ptr<char *[], decltype(&free)> param_cleanup(nullptr, &free);
 
   if (has_params_) {
     // Convert Arrow array parameters to PostgreSQL text format
@@ -106,10 +107,9 @@ Result<int64_t> CubeStatementImpl::ExecuteQuery(struct ArrowArrayStream* out) {
         &param_array_, &param_schema_);
 
     if (!param_values.empty()) {
-      param_c_values =
-          ParameterConverter::GetParamValuesCArray(param_values);
+      param_c_values = ParameterConverter::GetParamValuesCArray(param_values);
       if (param_c_values) {
-        param_cleanup.reset(const_cast<char**>(param_c_values));
+        param_cleanup.reset(const_cast<char **>(param_c_values));
       }
     }
   }
@@ -125,19 +125,19 @@ Result<int64_t> CubeStatementImpl::ExecuteQuery(struct ArrowArrayStream* out) {
     return status_result;
   }
 
-  return -1L;  // Unknown number of affected rows
+  return -1L; // Unknown number of affected rows
 }
 
 Result<int64_t> CubeStatementImpl::ExecuteUpdate() {
   // TODO: Implement for UPDATE/INSERT/DELETE statements
-  return -1L;  // Unknown number of affected rows
+  return -1L; // Unknown number of affected rows
 }
 
 // CubeStatement implementation
 
-Status CubeStatement::InitImpl(void* parent) {
+Status CubeStatement::InitImpl(void *parent) {
   // Store connection reference
-  auto* connection = reinterpret_cast<CubeConnection*>(parent);
+  auto *connection = reinterpret_cast<CubeConnection *>(parent);
   if (connection && connection->impl_) {
     connection_ = connection->impl_.get();
   }
@@ -150,7 +150,8 @@ Status CubeStatement::ReleaseImpl() {
   return status::Ok();
 }
 
-Status CubeStatement::PrepareImpl(driver::Statement<CubeStatement>::QueryState& state) {
+Status CubeStatement::PrepareImpl(
+    driver::Statement<CubeStatement>::QueryState &state) {
   if (!impl_) {
     return status::InvalidState("Statement not initialized");
   }
@@ -162,7 +163,8 @@ Status CubeStatement::PrepareImpl(driver::Statement<CubeStatement>::QueryState& 
   return status;
 }
 
-Status CubeStatement::BindImpl(driver::Statement<CubeStatement>::QueryState& state) {
+Status
+CubeStatement::BindImpl(driver::Statement<CubeStatement>::QueryState &state) {
   if (!impl_) {
     return status::InvalidState("Statement not initialized");
   }
@@ -174,8 +176,9 @@ Status CubeStatement::BindImpl(driver::Statement<CubeStatement>::QueryState& sta
   return status;
 }
 
-Status CubeStatement::BindStreamImpl(driver::Statement<CubeStatement>::QueryState& state,
-                                    struct ArrowArrayStream* values) {
+Status CubeStatement::BindStreamImpl(
+    driver::Statement<CubeStatement>::QueryState &state,
+    struct ArrowArrayStream *values) {
   if (!impl_) {
     return status::InvalidState("Statement not initialized");
   }
@@ -187,15 +190,15 @@ Status CubeStatement::BindStreamImpl(driver::Statement<CubeStatement>::QueryStat
   return status;
 }
 
-Result<int64_t> CubeStatement::ExecuteQueryImpl(struct ArrowArrayStream* out) {
+Result<int64_t> CubeStatement::ExecuteQueryImpl(struct ArrowArrayStream *out) {
   if (!impl_) {
     return status::InvalidState("Statement not initialized");
   }
   return impl_->ExecuteQuery(out);
 }
 
-Result<int64_t> CubeStatement::ExecuteQueryImpl(QueryState& state,
-                                                 struct ArrowArrayStream* out) {
+Result<int64_t> CubeStatement::ExecuteQueryImpl(QueryState &state,
+                                                struct ArrowArrayStream *out) {
   // Initialize impl with connection if not already done
   if (!impl_) {
     impl_ = std::make_unique<CubeStatementImpl>(connection_, state.query);
@@ -205,8 +208,8 @@ Result<int64_t> CubeStatement::ExecuteQueryImpl(QueryState& state,
   return impl_->ExecuteQuery(out);
 }
 
-Result<int64_t> CubeStatement::ExecuteQueryImpl(PreparedState& state,
-                                                 struct ArrowArrayStream* out) {
+Result<int64_t> CubeStatement::ExecuteQueryImpl(PreparedState &state,
+                                                struct ArrowArrayStream *out) {
   // Initialize impl with connection if not already done
   if (!impl_) {
     impl_ = std::make_unique<CubeStatementImpl>(connection_, state.query);
@@ -223,7 +226,8 @@ Result<int64_t> CubeStatement::ExecuteUpdateImpl() {
   return impl_->ExecuteUpdate();
 }
 
-Status CubeStatement::SetOptionImpl(std::string_view key, driver::Option value) {
+Status CubeStatement::SetOptionImpl(std::string_view key,
+                                    driver::Option value) {
   // Handle standard ADBC statement options
   if (key == ADBC_INGEST_OPTION_TARGET_TABLE) {
     // Handle ingestion target table
@@ -247,4 +251,4 @@ Status CubeStatement::SetOptionImpl(std::string_view key, driver::Option value) 
   return status::NotImplemented("Unknown statement option: ", key);
 }
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

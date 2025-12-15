@@ -29,50 +29,51 @@ namespace adbc::cube {
 // Helper class to convert Arrow arrays to PostgreSQL parameter format
 // Converts Arrow values to text strings for use with PQexecParams()
 class ParameterConverter {
- public:
+public:
   ParameterConverter();
   ~ParameterConverter();
 
   // Convert a single Arrow value to PostgreSQL text format
   // Returns the text representation, or empty string for NULL values
   // Sets is_null to true for NULL values
-  static std::string ConvertArrowValue(const ArrowArray* array, int64_t row,
-                                       const ArrowSchema* schema,
-                                       bool* is_null);
+  static std::string ConvertArrowValue(const ArrowArray *array, int64_t row,
+                                       const ArrowSchema *schema,
+                                       bool *is_null);
 
   // Convert Arrow array to vector of PostgreSQL parameter strings
   // Returns parameter values and nullness flags for use with PQexecParams
-  static std::vector<std::string> ConvertArrowArrayToParams(
-      const ArrowArray* values, const ArrowSchema* schema);
+  static std::vector<std::string>
+  ConvertArrowArrayToParams(const ArrowArray *values,
+                            const ArrowSchema *schema);
 
   // Get the C-style parameter values array for PQexecParams
   // Should be freed with free() after use
-  static const char** GetParamValuesCArray(
-      const std::vector<std::string>& param_values);
+  static const char **
+  GetParamValuesCArray(const std::vector<std::string> &param_values);
 
- private:
+private:
   // Type-specific converters
-  static std::string ConvertInt8(const ArrowArray* array, int64_t row);
-  static std::string ConvertInt16(const ArrowArray* array, int64_t row);
-  static std::string ConvertInt32(const ArrowArray* array, int64_t row);
-  static std::string ConvertInt64(const ArrowArray* array, int64_t row);
-  static std::string ConvertUInt8(const ArrowArray* array, int64_t row);
-  static std::string ConvertUInt16(const ArrowArray* array, int64_t row);
-  static std::string ConvertUInt32(const ArrowArray* array, int64_t row);
-  static std::string ConvertUInt64(const ArrowArray* array, int64_t row);
-  static std::string ConvertFloat(const ArrowArray* array, int64_t row);
-  static std::string ConvertDouble(const ArrowArray* array, int64_t row);
-  static std::string ConvertString(const ArrowArray* array, int64_t row);
-  static std::string ConvertBinary(const ArrowArray* array, int64_t row);
-  static std::string ConvertBool(const ArrowArray* array, int64_t row);
-  static std::string ConvertDate32(const ArrowArray* array, int64_t row);
-  static std::string ConvertDate64(const ArrowArray* array, int64_t row);
-  static std::string ConvertTime64(const ArrowArray* array, int64_t row);
-  static std::string ConvertTimestamp(const ArrowArray* array, int64_t row,
-                                      const ArrowSchema* schema);
+  static std::string ConvertInt8(const ArrowArray *array, int64_t row);
+  static std::string ConvertInt16(const ArrowArray *array, int64_t row);
+  static std::string ConvertInt32(const ArrowArray *array, int64_t row);
+  static std::string ConvertInt64(const ArrowArray *array, int64_t row);
+  static std::string ConvertUInt8(const ArrowArray *array, int64_t row);
+  static std::string ConvertUInt16(const ArrowArray *array, int64_t row);
+  static std::string ConvertUInt32(const ArrowArray *array, int64_t row);
+  static std::string ConvertUInt64(const ArrowArray *array, int64_t row);
+  static std::string ConvertFloat(const ArrowArray *array, int64_t row);
+  static std::string ConvertDouble(const ArrowArray *array, int64_t row);
+  static std::string ConvertString(const ArrowArray *array, int64_t row);
+  static std::string ConvertBinary(const ArrowArray *array, int64_t row);
+  static std::string ConvertBool(const ArrowArray *array, int64_t row);
+  static std::string ConvertDate32(const ArrowArray *array, int64_t row);
+  static std::string ConvertDate64(const ArrowArray *array, int64_t row);
+  static std::string ConvertTime64(const ArrowArray *array, int64_t row);
+  static std::string ConvertTimestamp(const ArrowArray *array, int64_t row,
+                                      const ArrowSchema *schema);
 
   // Helper to check if value is NULL
-  static bool IsValueNull(const ArrowArray* array, int64_t row);
+  static bool IsValueNull(const ArrowArray *array, int64_t row);
 };
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

@@ -15,13 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include <cstdlib>
-#include <utility>
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
+#include <utility>
 
-#include "driver/cube/database.h"
 #include "driver/cube/connection.h"
+#include "driver/cube/database.h"
 
 namespace adbc::cube {
 
@@ -41,7 +41,7 @@ ConnectionMode CubeDatabase::connection_mode() const {
 Status CubeDatabase::InitImpl() {
   // Check for required authentication token
   if (token_.empty()) {
-    const char* token_env = std::getenv("CUBESQL_CUBE_TOKEN");
+    const char *token_env = std::getenv("CUBESQL_CUBE_TOKEN");
     if (token_env) {
       token_ = token_env;
     }
@@ -85,4 +85,4 @@ Status CubeDatabase::SetOptionImpl(std::string_view key, driver::Option value) {
   return status::NotImplemented("Unknown option: ", key);
 }
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

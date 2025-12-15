@@ -21,7 +21,7 @@
 #endif
 
 #if CUBE_DEBUG_LOGGING
-#define DEBUG_LOG(...) DEBUG_LOG( __VA_ARGS__)
+#define DEBUG_LOG(...) DEBUG_LOG(__VA_ARGS__)
 #else
 #define DEBUG_LOG(...) ((void)0)
 #endif
@@ -32,8 +32,8 @@
 #include <memory>
 
 #include "driver/cube/arrow_reader.h"
-#include "format/generated/Schema_generated.h"
 #include "format/generated/Message_generated.h"
+#include "format/generated/Schema_generated.h"
 #include <flatbuffers/flatbuffers.h>
 
 namespace adbc::cube {
@@ -43,26 +43,26 @@ namespace {
 // Arrow IPC format constants
 const uint32_t ARROW_IPC_MAGIC = 0xFFFFFFFF;
 const int ARROW_IPC_SCHEMA_MESSAGE_TYPE = 1;
-const int ARROW_IPC_RECORD_BATCH_MESSAGE_TYPE = 3;  // Fixed: was 0, should be 3
+const int ARROW_IPC_RECORD_BATCH_MESSAGE_TYPE = 3; // Fixed: was 0, should be 3
 
 // Helper to read little-endian integers (Arrow IPC format uses little-endian)
-inline uint32_t ReadLE32(const uint8_t* data) {
+inline uint32_t ReadLE32(const uint8_t *data) {
   return static_cast<uint32_t>(data[0]) |
          (static_cast<uint32_t>(data[1]) << 8) |
          (static_cast<uint32_t>(data[2]) << 16) |
          (static_cast<uint32_t>(data[3]) << 24);
 }
 
-inline int32_t ReadLE32Signed(const uint8_t* data) {
+inline int32_t ReadLE32Signed(const uint8_t *data) {
   return static_cast<int32_t>(ReadLE32(data));
 }
 
 // Helper to get bit from bitmap (Arrow validity bitmaps)
-inline bool GetBit(const uint8_t* bitmap, int64_t index) {
+inline bool GetBit(const uint8_t *bitmap, int64_t index) {
   return (bitmap[index / 8] & (1 << (index % 8))) != 0;
 }
 
-}  // namespace
+} // namespace
 
 CubeArrowReader::CubeArrowReader(std::vector<uint8_t> arrow_ipc_data)
     : buffer_(std::move(arrow_ipc_data)) {
@@ -75,8 +75,9 @@ CubeArrowReader::~CubeArrowReader() {
   }
 }
 
-ArrowErrorCode CubeArrowReader::Init(ArrowError* error) {
-  DEBUG_LOG( "[CubeArrowReader::Init] Starting with buffer size: %zu\n", buffer_.size());
+ArrowErrorCode CubeArrowReader::Init(ArrowError *error) {
+  DEBUG_LOG("[CubeArrowReader::Init] Starting with buffer size: %zu\n",
+            buffer_.size());
 
   if (buffer_.empty()) {
     ArrowErrorSet(error, "Empty Arrow IPC buffer");
@@ -89,21 +90,25 @@ ArrowErrorCode CubeArrowReader::Init(ArrowError* error) {
   if (debug_file) {
     fwrite(buffer_.data(), 1, buffer_.size(), debug_file);
     fclose(debug_file);
-    DEBUG_LOG( "[CubeArrowReader::Init] Saved %zu bytes to /tmp/cube_arrow_ipc_data.bin\n", buffer_.size());
+    DEBUG_LOG( "[CubeArrowReader::Init] Saved %zu bytes to
+  /tmp/cube_arrow_ipc_data.bin\n", buffer_.size());
   }
   */
   // Debug: Print first 128 bytes as hex
-  DEBUG_LOG( "[CubeArrowReader::Init] First 128 bytes (hex):\n");
+  DEBUG_LOG("[CubeArrowReader::Init] First 128 bytes (hex):\n");
   for (size_t i = 0; i < std::min(buffer_.size(), size_t(128)); i++) {
-    if (i % 16 == 0) DEBUG_LOG( "  %04zx: ", i);
-    DEBUG_LOG( "%02x ", buffer_[i]);
-    if ((i + 1) % 16 == 0) DEBUG_LOG( "\n");
+    if (i % 16 == 0)
+      DEBUG_LOG("  %04zx: ", i);
+    DEBUG_LOG("%02x ", buffer_[i]);
+    if ((i + 1) % 16 == 0)
+      DEBUG_LOG("\n");
   }
-  if (buffer_.size() % 16 != 0) DEBUG_LOG( "\n");
+  if (buffer_.size() % 16 != 0)
+    DEBUG_LOG("\n");
 
   // Parse Arrow IPC stream format
   // Format: [Continuation=0xFFFFFFFF][Size][Message][Padding]
-  DEBUG_LOG( "[CubeArrowReader::Init] Parsing Arrow IPC stream format\n");
+  DEBUG_LOG("[CubeArrowReader::Init] Parsing Arrow IPC stream format\n");
 
   // Message 0: Schema message
   if (offset_ + 8 > static_cast<int64_t>(buffer_.size())) {
@@ -113,8 +118,9 @@ ArrowErrorCode CubeArrowReader::Init(ArrowError* error) {
 
   uint32_t continuation = ReadLE32(buffer_.data() + offset_);
   uint32_t msg_size = ReadLE32(buffer_.data() + offset_ + 4);
-  DEBUG_LOG( "[CubeArrowReader::Init] Schema message: continuation=0x%x, size=%u\n",
-          continuation, msg_size);
+  DEBUG_LOG(
+      "[CubeArrowReader::Init] Schema message: continuation=0x%x, size=%u\n",
+      continuation, msg_size);
 
   if (continuation != ARROW_IPC_MAGIC) {
     ArrowErrorSet(error, "Invalid continuation marker for schema");
@@ -122,10 +128,11 @@ ArrowErrorCode CubeArrowReader::Init(ArrowError* error) {
   }
 
   // Parse schema message using FlatBuffers
-  DEBUG_LOG( "[CubeArrowReader::Init] Parsing FlatBuffer schema\n");
-  auto status = ParseSchemaFlatBuffer(buffer_.data() + offset_ + 8, msg_size, error);
+  DEBUG_LOG("[CubeArrowReader::Init] Parsing FlatBuffer schema\n");
+  auto status =
+      ParseSchemaFlatBuffer(buffer_.data() + offset_ + 8, msg_size, error);
   if (status != NANOARROW_OK) {
-    DEBUG_LOG( "[CubeArrowReader::Init] FlatBuffer schema parsing failed\n");
+    DEBUG_LOG("[CubeArrowReader::Init] FlatBuffer schema parsing failed\n");
     return status;
   }
 
@@ -136,61 +143,66 @@ ArrowErrorCode CubeArrowReader::Init(ArrowError* error) {
   }
 
   finished_ = false;
-  DEBUG_LOG( "[CubeArrowReader::Init] Schema initialized, offset now at %lld\n", (long long)offset_);
+  DEBUG_LOG("[CubeArrowReader::Init] Schema initialized, offset now at %lld\n",
+            (long long)offset_);
   return NANOARROW_OK;
 }
 
-ArrowErrorCode CubeArrowReader::GetSchema(ArrowSchema* out) {
-  DEBUG_LOG( "[CubeArrowReader::GetSchema] schema_initialized_=%d\n", schema_initialized_);
+ArrowErrorCode CubeArrowReader::GetSchema(ArrowSchema *out) {
+  DEBUG_LOG("[CubeArrowReader::GetSchema] schema_initialized_=%d\n",
+            schema_initialized_);
   if (!schema_initialized_) {
-    DEBUG_LOG( "[CubeArrowReader::GetSchema] Schema not initialized!\n");
-    return EINVAL;  // Schema not yet initialized
+    DEBUG_LOG("[CubeArrowReader::GetSchema] Schema not initialized!\n");
+    return EINVAL; // Schema not yet initialized
   }
   auto result = ArrowSchemaDeepCopy(&schema_, out);
-  DEBUG_LOG( "[CubeArrowReader::GetSchema] DeepCopy returned: %d\n", result);
+  DEBUG_LOG("[CubeArrowReader::GetSchema] DeepCopy returned: %d\n", result);
   return result;
 }
 
-ArrowErrorCode CubeArrowReader::GetNext(ArrowArray* out) {
-  DEBUG_LOG( "[CubeArrowReader::GetNext] schema_initialized_=%d, finished_=%d, offset_=%lld\n",
-          schema_initialized_, finished_, (long long)offset_);
+ArrowErrorCode CubeArrowReader::GetNext(ArrowArray *out) {
+  DEBUG_LOG("[CubeArrowReader::GetNext] schema_initialized_=%d, finished_=%d, "
+            "offset_=%lld\n",
+            schema_initialized_, finished_, (long long)offset_);
 
   if (!schema_initialized_) {
-    DEBUG_LOG( "[CubeArrowReader::GetNext] Schema not initialized!\n");
+    DEBUG_LOG("[CubeArrowReader::GetNext] Schema not initialized!\n");
     return EINVAL;
   }
 
   if (finished_) {
-    DEBUG_LOG( "[CubeArrowReader::GetNext] Already finished\n");
-    return ENOMSG;  // No more messages
+    DEBUG_LOG("[CubeArrowReader::GetNext] Already finished\n");
+    return ENOMSG; // No more messages
   }
 
   // Parse RecordBatch message
   if (offset_ + 8 > static_cast<int64_t>(buffer_.size())) {
-    DEBUG_LOG( "[CubeArrowReader::GetNext] End of buffer\n");
+    DEBUG_LOG("[CubeArrowReader::GetNext] End of buffer\n");
     finished_ = true;
     return ENOMSG;
   }
 
   uint32_t continuation = ReadLE32(buffer_.data() + offset_);
   uint32_t msg_size = ReadLE32(buffer_.data() + offset_ + 4);
-  DEBUG_LOG( "[CubeArrowReader::GetNext] RecordBatch message: continuation=0x%x, size=%u\n",
-          continuation, msg_size);
+  DEBUG_LOG("[CubeArrowReader::GetNext] RecordBatch message: "
+            "continuation=0x%x, size=%u\n",
+            continuation, msg_size);
 
   if (continuation != ARROW_IPC_MAGIC) {
     // Might be EOS marker (0xFFFFFFFF 0x00000000)
     if (continuation == ARROW_IPC_MAGIC && msg_size == 0) {
-      DEBUG_LOG( "[CubeArrowReader::GetNext] Found EOS marker\n");
+      DEBUG_LOG("[CubeArrowReader::GetNext] Found EOS marker\n");
       finished_ = true;
       return ENOMSG;
     }
-    DEBUG_LOG( "[CubeArrowReader::GetNext] Invalid continuation marker: 0x%x\n", continuation);
+    DEBUG_LOG("[CubeArrowReader::GetNext] Invalid continuation marker: 0x%x\n",
+              continuation);
     finished_ = true;
     return ENOMSG;
   }
 
   // Parse RecordBatch message using FlatBuffers
-  DEBUG_LOG( "[CubeArrowReader::GetNext] Parsing RecordBatch FlatBuffer\n");
+  DEBUG_LOG("[CubeArrowReader::GetNext] Parsing RecordBatch FlatBuffer\n");
 
   int64_t metadata_size = 8 + msg_size;
   int64_t body_offset = offset_ + metadata_size;
@@ -198,33 +210,31 @@ ArrowErrorCode CubeArrowReader::GetNext(ArrowArray* out) {
     body_offset += 8 - (body_offset % 8);
   }
 
-  const uint8_t* body_data = buffer_.data() + body_offset;
+  const uint8_t *body_data = buffer_.data() + body_offset;
   int64_t body_size = buffer_.size() - body_offset;
 
-  auto status = ParseRecordBatchFlatBuffer(
-      buffer_.data() + offset_ + 8,
-      msg_size,
-      body_data,
-      body_size,
-      out,
-      nullptr);
+  auto status =
+      ParseRecordBatchFlatBuffer(buffer_.data() + offset_ + 8, msg_size,
+                                 body_data, body_size, out, nullptr);
 
   if (status != NANOARROW_OK) {
-    DEBUG_LOG( "[CubeArrowReader::GetNext] Batch parsing failed\n");
+    DEBUG_LOG("[CubeArrowReader::GetNext] Batch parsing failed\n");
     return status;
   }
 
   finished_ = true;
-  DEBUG_LOG( "[CubeArrowReader::GetNext] Successfully parsed RecordBatch\n");
+  DEBUG_LOG("[CubeArrowReader::GetNext] Successfully parsed RecordBatch\n");
   return NANOARROW_OK;
 }
 
-ArrowErrorCode CubeArrowReader::ParseMessage(ArrowError* error) {
-  DEBUG_LOG( "[CubeArrowReader::ParseMessage] offset_=%lld, buffer_.size()=%zu\n",
-          (long long)offset_, buffer_.size());
+ArrowErrorCode CubeArrowReader::ParseMessage(ArrowError *error) {
+  DEBUG_LOG(
+      "[CubeArrowReader::ParseMessage] offset_=%lld, buffer_.size()=%zu\n",
+      (long long)offset_, buffer_.size());
 
   if (offset_ >= static_cast<int64_t>(buffer_.size())) {
-    DEBUG_LOG( "[CubeArrowReader::ParseMessage] Offset past end, setting finished\n");
+    DEBUG_LOG(
+        "[CubeArrowReader::ParseMessage] Offset past end, setting finished\n");
     finished_ = true;
     return ENOMSG;
   }
@@ -238,7 +248,7 @@ ArrowErrorCode CubeArrowReader::ParseMessage(ArrowError* error) {
     return ENOMSG;
   }
 
-  const uint8_t* header = buffer_.data() + offset_;
+  const uint8_t *header = buffer_.data() + offset_;
   int32_t message_length = ReadLE32Signed(header);
 
   // Message length should be positive
@@ -251,7 +261,7 @@ ArrowErrorCode CubeArrowReader::ParseMessage(ArrowError* error) {
   }
 
   int32_t message_type = ReadLE32Signed(header + 4);
-  const uint8_t* message_data = header + 8;
+  const uint8_t *message_data = header + 8;
 
   if (offset_ + 8 + message_length > static_cast<int64_t>(buffer_.size())) {
     if (error) {
@@ -279,9 +289,9 @@ ArrowErrorCode CubeArrowReader::ParseMessage(ArrowError* error) {
   }
 }
 
-ArrowErrorCode CubeArrowReader::ParseSchemaMessage(const uint8_t* message_data,
-                                                    int64_t message_length,
-                                                    ArrowError* error) {
+ArrowErrorCode CubeArrowReader::ParseSchemaMessage(const uint8_t *message_data,
+                                                   int64_t message_length,
+                                                   ArrowError *error) {
   // Simplified: just mark schema as initialized
   // In a full implementation, would parse FlatBuffer to get real schema
   schema_initialized_ = true;
@@ -292,59 +302,58 @@ ArrowErrorCode CubeArrowReader::ParseSchemaMessage(const uint8_t* message_data,
   return NANOARROW_OK;
 }
 
-ArrowErrorCode CubeArrowReader::ParseRecordBatchMessage(
-    const uint8_t* message_data, int64_t message_length, ArrowArray* out,
-    ArrowError* error) {
+ArrowErrorCode
+CubeArrowReader::ParseRecordBatchMessage(const uint8_t *message_data,
+                                         int64_t message_length,
+                                         ArrowArray *out, ArrowError *error) {
   // Simplified: return empty array
   // In a full implementation, would parse FlatBuffer to get batch data
   return NANOARROW_OK;
 }
 
 // Static helper for bit access
-bool CubeArrowReader::GetBit(const uint8_t* bitmap, int64_t index) {
+bool CubeArrowReader::GetBit(const uint8_t *bitmap, int64_t index) {
   return ::adbc::cube::GetBit(bitmap, index);
 }
 
 // Map FlatBuffer Type enum to nanoarrow type
 int CubeArrowReader::MapFlatBufferTypeToArrow(int fb_type) {
   switch (fb_type) {
-    case org::apache::arrow::flatbuf::Type_Int:
-      return NANOARROW_TYPE_INT64;  // Assume INT64 for now
-    case org::apache::arrow::flatbuf::Type_FloatingPoint:
-      return NANOARROW_TYPE_DOUBLE;
-    case org::apache::arrow::flatbuf::Type_Bool:
-      return NANOARROW_TYPE_BOOL;
-    case org::apache::arrow::flatbuf::Type_Utf8:
-      return NANOARROW_TYPE_STRING;
-    default:
-      DEBUG_LOG( "[MapFlatBufferTypeToArrow] Unsupported type: %d\n", fb_type);
-      return NANOARROW_TYPE_UNINITIALIZED;
+  case org::apache::arrow::flatbuf::Type_Int:
+    return NANOARROW_TYPE_INT64; // Assume INT64 for now
+  case org::apache::arrow::flatbuf::Type_FloatingPoint:
+    return NANOARROW_TYPE_DOUBLE;
+  case org::apache::arrow::flatbuf::Type_Bool:
+    return NANOARROW_TYPE_BOOL;
+  case org::apache::arrow::flatbuf::Type_Utf8:
+    return NANOARROW_TYPE_STRING;
+  default:
+    DEBUG_LOG("[MapFlatBufferTypeToArrow] Unsupported type: %d\n", fb_type);
+    return NANOARROW_TYPE_UNINITIALIZED;
   }
 }
 
 // Get number of buffers needed for a type
 int CubeArrowReader::GetBufferCountForType(int arrow_type) {
   switch (arrow_type) {
-    case NANOARROW_TYPE_BOOL:
-    case NANOARROW_TYPE_INT64:
-    case NANOARROW_TYPE_DOUBLE:
-      return 2;  // validity + data
-    case NANOARROW_TYPE_STRING:
-      return 3;  // validity + offsets + data
-    default:
-      return 2;
+  case NANOARROW_TYPE_BOOL:
+  case NANOARROW_TYPE_INT64:
+  case NANOARROW_TYPE_DOUBLE:
+    return 2; // validity + data
+  case NANOARROW_TYPE_STRING:
+    return 3; // validity + offsets + data
+  default:
+    return 2;
   }
 }
 
 // Extract buffer from RecordBatch FlatBuffer
 void CubeArrowReader::ExtractBuffer(
-    const org::apache::arrow::flatbuf::RecordBatch* batch,
-    int buffer_index,
-    const uint8_t* body_data,
-    const uint8_t** out_ptr,
-    int64_t* out_size) {
+    const org::apache::arrow::flatbuf::RecordBatch *batch, int buffer_index,
+    const uint8_t *body_data, const uint8_t **out_ptr, int64_t *out_size) {
 
-  if (!batch || !batch->buffers() || buffer_index >= static_cast<int>(batch->buffers()->size())) {
+  if (!batch || !batch->buffers() ||
+      buffer_index >= static_cast<int>(batch->buffers()->size())) {
     *out_ptr = nullptr;
     *out_size = 0;
     return;
@@ -365,10 +374,9 @@ void CubeArrowReader::ExtractBuffer(
 }
 
 // Parse Schema FlatBuffer message
-ArrowErrorCode CubeArrowReader::ParseSchemaFlatBuffer(
-    const uint8_t* fb_data,
-    int64_t fb_size,
-    ArrowError* error) {
+ArrowErrorCode CubeArrowReader::ParseSchemaFlatBuffer(const uint8_t *fb_data,
+                                                      int64_t fb_size,
+                                                      ArrowError *error) {
 
   // Verify FlatBuffer
   flatbuffers::Verifier verifier(fb_data, fb_size);
@@ -378,7 +386,8 @@ ArrowErrorCode CubeArrowReader::ParseSchemaFlatBuffer(
   }
 
   auto message = ::org::apache::arrow::flatbuf::GetMessage(fb_data);
-  if (!message || message->header_type() != ::org::apache::arrow::flatbuf::MessageHeader_Schema) {
+  if (!message || message->header_type() !=
+                      ::org::apache::arrow::flatbuf::MessageHeader_Schema) {
     ArrowErrorSet(error, "Not a Schema message");
     return EINVAL;
   }
@@ -397,7 +406,8 @@ ArrowErrorCode CubeArrowReader::ParseSchemaFlatBuffer(
   // Extract field metadata
   for (unsigned int i = 0; i < schema->fields()->size(); i++) {
     auto field = schema->fields()->Get(i);
-    if (!field) continue;
+    if (!field)
+      continue;
 
     std::string name = field->name() ? field->name()->str() : "";
     field_names_.push_back(name);
@@ -406,8 +416,9 @@ ArrowErrorCode CubeArrowReader::ParseSchemaFlatBuffer(
     int arrow_type = MapFlatBufferTypeToArrow(field->type_type());
     field_types_.push_back(arrow_type);
 
-    DEBUG_LOG( "[ParseSchemaFlatBuffer] Field %u: name='%s', type=%d, nullable=%d\n",
-            i, name.c_str(), arrow_type, field->nullable());
+    DEBUG_LOG(
+        "[ParseSchemaFlatBuffer] Field %u: name='%s', type=%d, nullable=%d\n",
+        i, name.c_str(), arrow_type, field->nullable());
   }
 
   // Build nanoarrow schema
@@ -419,7 +430,7 @@ ArrowErrorCode CubeArrowReader::ParseSchemaFlatBuffer(
   }
 
   for (size_t i = 0; i < field_names_.size(); i++) {
-    struct ArrowSchema* child = schema_.children[i];
+    struct ArrowSchema *child = schema_.children[i];
     status = ArrowSchemaSetType(child, static_cast<ArrowType>(field_types_[i]));
     if (status != NANOARROW_OK) {
       ArrowErrorSet(error, "Failed to set child type");
@@ -440,18 +451,15 @@ ArrowErrorCode CubeArrowReader::ParseSchemaFlatBuffer(
   }
 
   schema_initialized_ = true;
-  DEBUG_LOG( "[ParseSchemaFlatBuffer] Schema parsed: %zu fields\n", field_names_.size());
+  DEBUG_LOG("[ParseSchemaFlatBuffer] Schema parsed: %zu fields\n",
+            field_names_.size());
   return NANOARROW_OK;
 }
 
 // Parse RecordBatch FlatBuffer message
 ArrowErrorCode CubeArrowReader::ParseRecordBatchFlatBuffer(
-    const uint8_t* fb_data,
-    int64_t fb_size,
-    const uint8_t* body_data,
-    int64_t body_size,
-    ArrowArray* out,
-    ArrowError* error) {
+    const uint8_t *fb_data, int64_t fb_size, const uint8_t *body_data,
+    int64_t body_size, ArrowArray *out, ArrowError *error) {
 
   // Verify FlatBuffer
   flatbuffers::Verifier verifier(fb_data, fb_size);
@@ -461,7 +469,9 @@ ArrowErrorCode CubeArrowReader::ParseRecordBatchFlatBuffer(
   }
 
   auto message = ::org::apache::arrow::flatbuf::GetMessage(fb_data);
-  if (!message || message->header_type() != ::org::apache::arrow::flatbuf::MessageHeader_RecordBatch) {
+  if (!message ||
+      message->header_type() !=
+          ::org::apache::arrow::flatbuf::MessageHeader_RecordBatch) {
     ArrowErrorSet(error, "Not a RecordBatch message");
     return EINVAL;
   }
@@ -473,8 +483,8 @@ ArrowErrorCode CubeArrowReader::ParseRecordBatchFlatBuffer(
   }
 
   int64_t row_count = batch->length();
-  DEBUG_LOG( "[ParseRecordBatchFlatBuffer] Batch has %lld rows, %zu columns\n",
-          (long long)row_count, field_names_.size());
+  DEBUG_LOG("[ParseRecordBatchFlatBuffer] Batch has %lld rows, %zu columns\n",
+            (long long)row_count, field_names_.size());
 
   // Create struct array
   auto status = ArrowArrayInitFromType(out, NANOARROW_TYPE_STRUCT);
@@ -493,10 +503,11 @@ ArrowErrorCode CubeArrowReader::ParseRecordBatchFlatBuffer(
   // Build array for each field
   int buffer_index = 0;
   for (size_t i = 0; i < field_names_.size(); i++) {
-    struct ArrowArray* child = out->children[i];
-    status = BuildArrayForField(i, row_count, batch, body_data, &buffer_index, child, error);
+    struct ArrowArray *child = out->children[i];
+    status = BuildArrayForField(i, row_count, batch, body_data, &buffer_index,
+                                child, error);
     if (status != NANOARROW_OK) {
-      DEBUG_LOG( "[ParseRecordBatchFlatBuffer] Failed to build field %zu\n", i);
+      DEBUG_LOG("[ParseRecordBatchFlatBuffer] Failed to build field %zu\n", i);
       ArrowArrayRelease(out);
       return status;
     }
@@ -506,19 +517,16 @@ ArrowErrorCode CubeArrowReader::ParseRecordBatchFlatBuffer(
   out->length = row_count;
   out->null_count = 0;
 
-  DEBUG_LOG( "[ParseRecordBatchFlatBuffer] Successfully parsed batch\n");
+  DEBUG_LOG("[ParseRecordBatchFlatBuffer] Successfully parsed batch\n");
   return NANOARROW_OK;
 }
 
 // Build array for a specific field (type-specific handling)
 ArrowErrorCode CubeArrowReader::BuildArrayForField(
-    int field_index,
-    int64_t row_count,
-    const org::apache::arrow::flatbuf::RecordBatch* batch,
-    const uint8_t* body_data,
-    int* buffer_index_inout,
-    ArrowArray* out,
-    ArrowError* error) {
+    int field_index, int64_t row_count,
+    const org::apache::arrow::flatbuf::RecordBatch *batch,
+    const uint8_t *body_data, int *buffer_index_inout, ArrowArray *out,
+    ArrowError *error) {
 
   if (field_index < 0 || field_index >= static_cast<int>(field_types_.size())) {
     ArrowErrorSet(error, "Invalid field index: %d", field_index);
@@ -529,9 +537,10 @@ ArrowErrorCode CubeArrowReader::BuildArrayForField(
   // int buffer_count = GetBufferCountForType(arrow_type);  // Unused for now
 
   // Extract validity buffer
-  const uint8_t* validity_buffer = nullptr;
+  const uint8_t *validity_buffer = nullptr;
   int64_t validity_size = 0;
-  ExtractBuffer(batch, *buffer_index_inout, body_data, &validity_buffer, &validity_size);
+  ExtractBuffer(batch, *buffer_index_inout, body_data, &validity_buffer,
+                &validity_size);
   (*buffer_index_inout)++;
 
   // Initialize array for this type
@@ -550,109 +559,114 @@ ArrowErrorCode CubeArrowReader::BuildArrayForField(
 
   // Type-specific data extraction
   switch (arrow_type) {
-    case NANOARROW_TYPE_INT64: {
-      const uint8_t* data_buffer = nullptr;
-      int64_t data_size = 0;
-      ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer, &data_size);
-      (*buffer_index_inout)++;
+  case NANOARROW_TYPE_INT64: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
 
-      const int64_t* values = reinterpret_cast<const int64_t*>(data_buffer);
-      for (int64_t i = 0; i < row_count; i++) {
-        bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
-        if (is_valid) {
-          status = ArrowArrayAppendInt(out, values[i]);
-        } else {
-          status = ArrowArrayAppendNull(out, 1);
-        }
-        if (status != NANOARROW_OK) {
-          ArrowArrayRelease(out);
-          return status;
-        }
+    const int64_t *values = reinterpret_cast<const int64_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
       }
-      break;
-    }
-
-    case NANOARROW_TYPE_DOUBLE: {
-      const uint8_t* data_buffer = nullptr;
-      int64_t data_size = 0;
-      ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer, &data_size);
-      (*buffer_index_inout)++;
-
-      const double* values = reinterpret_cast<const double*>(data_buffer);
-      for (int64_t i = 0; i < row_count; i++) {
-        bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
-        if (is_valid) {
-          status = ArrowArrayAppendDouble(out, values[i]);
-        } else {
-          status = ArrowArrayAppendNull(out, 1);
-        }
-        if (status != NANOARROW_OK) {
-          ArrowArrayRelease(out);
-          return status;
-        }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
       }
-      break;
     }
+    break;
+  }
 
-    case NANOARROW_TYPE_BOOL: {
-      const uint8_t* data_buffer = nullptr;
-      int64_t data_size = 0;
-      ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer, &data_size);
-      (*buffer_index_inout)++;
+  case NANOARROW_TYPE_DOUBLE: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
 
-      for (int64_t i = 0; i < row_count; i++) {
-        bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
-        if (is_valid) {
-          bool value = GetBit(data_buffer, i);
-          status = ArrowArrayAppendInt(out, value ? 1 : 0);
-        } else {
-          status = ArrowArrayAppendNull(out, 1);
-        }
-        if (status != NANOARROW_OK) {
-          ArrowArrayRelease(out);
-          return status;
-        }
+    const double *values = reinterpret_cast<const double *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendDouble(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
       }
-      break;
-    }
-
-    case NANOARROW_TYPE_STRING: {
-      const uint8_t* offsets_buffer = nullptr;
-      int64_t offsets_size = 0;
-      ExtractBuffer(batch, *buffer_index_inout, body_data, &offsets_buffer, &offsets_size);
-      (*buffer_index_inout)++;
-
-      const uint8_t* data_buffer = nullptr;
-      int64_t data_size = 0;
-      ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer, &data_size);
-      (*buffer_index_inout)++;
-
-      const int32_t* offsets = reinterpret_cast<const int32_t*>(offsets_buffer);
-      for (int64_t i = 0; i < row_count; i++) {
-        bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
-        if (is_valid) {
-          int32_t start = offsets[i];
-          int32_t end = offsets[i + 1];
-          int32_t length = end - start;
-          struct ArrowStringView view;
-          view.data = reinterpret_cast<const char*>(data_buffer + start);
-          view.size_bytes = length;
-          status = ArrowArrayAppendString(out, view);
-        } else {
-          status = ArrowArrayAppendNull(out, 1);
-        }
-        if (status != NANOARROW_OK) {
-          ArrowArrayRelease(out);
-          return status;
-        }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
       }
-      break;
     }
+    break;
+  }
 
-    default:
-      ArrowErrorSet(error, "Unsupported Arrow type: %d", arrow_type);
-      ArrowArrayRelease(out);
-      return EINVAL;
+  case NANOARROW_TYPE_BOOL: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        bool value = GetBit(data_buffer, i);
+        status = ArrowArrayAppendInt(out, value ? 1 : 0);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_STRING: {
+    const uint8_t *offsets_buffer = nullptr;
+    int64_t offsets_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &offsets_buffer,
+                  &offsets_size);
+    (*buffer_index_inout)++;
+
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const int32_t *offsets = reinterpret_cast<const int32_t *>(offsets_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        int32_t start = offsets[i];
+        int32_t end = offsets[i + 1];
+        int32_t length = end - start;
+        struct ArrowStringView view;
+        view.data = reinterpret_cast<const char *>(data_buffer + start);
+        view.size_bytes = length;
+        status = ArrowArrayAppendString(out, view);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  default:
+    ArrowErrorSet(error, "Unsupported Arrow type: %d", arrow_type);
+    ArrowArrayRelease(out);
+    return EINVAL;
   }
 
   status = ArrowArrayFinishBuildingDefault(out, error);
@@ -665,45 +679,50 @@ ArrowErrorCode CubeArrowReader::BuildArrayForField(
 }
 
 // Arrow stream callbacks
-static int CubeArrowStreamGetSchema(struct ArrowArrayStream* stream, struct ArrowSchema* out) {
-  DEBUG_LOG( "[CubeArrowStreamGetSchema] Called\n");
-  auto* reader = static_cast<CubeArrowReader*>(stream->private_data);
-  DEBUG_LOG( "[CubeArrowStreamGetSchema] Reader pointer: %p\n", static_cast<void*>(reader));
+static int CubeArrowStreamGetSchema(struct ArrowArrayStream *stream,
+                                    struct ArrowSchema *out) {
+  DEBUG_LOG("[CubeArrowStreamGetSchema] Called\n");
+  auto *reader = static_cast<CubeArrowReader *>(stream->private_data);
+  DEBUG_LOG("[CubeArrowStreamGetSchema] Reader pointer: %p\n",
+            static_cast<void *>(reader));
   auto status = reader->GetSchema(out);
-  DEBUG_LOG( "[CubeArrowStreamGetSchema] Returning status: %d\n", status);
+  DEBUG_LOG("[CubeArrowStreamGetSchema] Returning status: %d\n", status);
   return status;
 }
 
-static int CubeArrowStreamGetNext(struct ArrowArrayStream* stream, struct ArrowArray* out) {
-  DEBUG_LOG( "[CubeArrowStreamGetNext] Called\n");
-  auto* reader = static_cast<CubeArrowReader*>(stream->private_data);
-  DEBUG_LOG( "[CubeArrowStreamGetNext] Reader pointer: %p\n", static_cast<void*>(reader));
+static int CubeArrowStreamGetNext(struct ArrowArrayStream *stream,
+                                  struct ArrowArray *out) {
+  DEBUG_LOG("[CubeArrowStreamGetNext] Called\n");
+  auto *reader = static_cast<CubeArrowReader *>(stream->private_data);
+  DEBUG_LOG("[CubeArrowStreamGetNext] Reader pointer: %p\n",
+            static_cast<void *>(reader));
   auto status = reader->GetNext(out);
-  DEBUG_LOG( "[CubeArrowStreamGetNext] Status: %d\n", status);
+  DEBUG_LOG("[CubeArrowStreamGetNext] Status: %d\n", status);
   if (status == ENOMSG) {
     // End of stream - return success with null array
     out->release = nullptr;
-    DEBUG_LOG( "[CubeArrowStreamGetNext] End of stream\n");
+    DEBUG_LOG("[CubeArrowStreamGetNext] End of stream\n");
     return NANOARROW_OK;
   }
-  DEBUG_LOG( "[CubeArrowStreamGetNext] Returning status: %d\n", status);
+  DEBUG_LOG("[CubeArrowStreamGetNext] Returning status: %d\n", status);
   return status;
 }
 
-static const char* CubeArrowStreamGetLastError(struct ArrowArrayStream* stream) {
+static const char *
+CubeArrowStreamGetLastError(struct ArrowArrayStream *stream) {
   return "Error accessing Cube Arrow stream";
 }
 
-static void CubeArrowStreamRelease(struct ArrowArrayStream* stream) {
+static void CubeArrowStreamRelease(struct ArrowArrayStream *stream) {
   if (stream->private_data != nullptr) {
-    auto* reader = static_cast<CubeArrowReader*>(stream->private_data);
+    auto *reader = static_cast<CubeArrowReader *>(stream->private_data);
     delete reader;
     stream->private_data = nullptr;
   }
   stream->release = nullptr;
 }
 
-void CubeArrowReader::ExportTo(struct ArrowArrayStream* stream) {
+void CubeArrowReader::ExportTo(struct ArrowArrayStream *stream) {
   stream->get_schema = CubeArrowStreamGetSchema;
   stream->get_next = CubeArrowStreamGetNext;
   stream->get_last_error = CubeArrowStreamGetLastError;
@@ -711,4 +730,4 @@ void CubeArrowReader::ExportTo(struct ArrowArrayStream* stream) {
   stream->private_data = this;
 }
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

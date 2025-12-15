@@ -26,9 +26,9 @@ namespace adbc::cube {
 
 // Maps Cube SQL types to Apache Arrow types with permissive fallback to BINARY
 class CubeTypeMapper {
- public:
-  static ArrowType MapCubeTypeToArrowType(const std::string& cube_type);
+public:
+  static ArrowType MapCubeTypeToArrowType(const std::string &cube_type);
   static std::string GetArrowTypeDescription(ArrowType type);
 };
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

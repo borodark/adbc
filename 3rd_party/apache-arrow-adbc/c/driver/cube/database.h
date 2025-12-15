@@ -38,7 +38,7 @@ using driver::Status;
 namespace status = adbc::driver::status;
 
 class CubeDatabase : public driver::Database<CubeDatabase> {
- public:
+public:
   constexpr static std::string_view kErrorPrefix = "[Cube]";
 
   ~CubeDatabase() = default;
@@ -48,22 +48,23 @@ class CubeDatabase : public driver::Database<CubeDatabase> {
   Status SetOptionImpl(std::string_view key, driver::Option value) override;
 
   // Accessors for connection parameters
-  const std::string& host() const { return host_; }
-  const std::string& port() const { return port_; }
-  const std::string& token() const { return token_; }
-  const std::string& database() const { return database_; }
-  const std::string& user() const { return user_; }
-  const std::string& password() const { return password_; }
+  const std::string &host() const { return host_; }
+  const std::string &port() const { return port_; }
+  const std::string &token() const { return token_; }
+  const std::string &database() const { return database_; }
+  const std::string &user() const { return user_; }
+  const std::string &password() const { return password_; }
   ConnectionMode connection_mode() const;
 
- private:
+private:
   std::string host_ = "localhost";
   std::string port_ = "4444";
   std::string token_;
   std::string database_;
   std::string user_;
   std::string password_;
-  std::string connection_mode_str_ = "postgresql";  // Default to PostgreSQL for compatibility
+  std::string connection_mode_str_ =
+      "postgresql"; // Default to PostgreSQL for compatibility
 };
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

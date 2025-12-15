@@ -30,12 +30,9 @@
 
 namespace adbc::cube {
 
-CubeConnectionImpl::CubeConnectionImpl(const CubeDatabase& database)
-    : host_(database.host()),
-      port_(database.port()),
-      token_(database.token()),
-      database_(database.database()),
-      user_(database.user()),
+CubeConnectionImpl::CubeConnectionImpl(const CubeDatabase &database)
+    : host_(database.host()), port_(database.port()), token_(database.token()),
+      database_(database.database()), user_(database.user()),
       password_(database.password()),
       connection_mode_(database.connection_mode()) {}
 
@@ -47,7 +44,7 @@ CubeConnectionImpl::~CubeConnectionImpl() {
   }
 }
 
-Status CubeConnectionImpl::Connect(struct AdbcError* error) {
+Status CubeConnectionImpl::Connect(struct AdbcError *error) {
   if (host_.empty() || port_.empty()) {
     return status::fmt::InvalidArgument(
         "Connection requires host and port. Got host='{}', port='{}'", host_,
@@ -75,7 +72,8 @@ Status CubeConnectionImpl::Connect(struct AdbcError* error) {
     auto auth_status = native_client_->Authenticate(token_, database_, error);
     if (auth_status != ADBC_STATUS_OK) {
       native_client_.reset();
-      return status::fmt::InvalidArgument("Authentication failed with native protocol");
+      return status::fmt::InvalidArgument(
+          "Authentication failed with native protocol");
     }
 
     connected_ = true;
@@ -113,8 +111,8 @@ Status CubeConnectionImpl::Connect(struct AdbcError* error) {
       PQfinish(conn_);
       conn_ = nullptr;
       return status::fmt::InvalidState(
-          "Failed to connect to Cube SQL at {}:{}: {}",
-          host_, port_, error_msg);
+          "Failed to connect to Cube SQL at {}:{}: {}", host_, port_,
+          error_msg);
     }
 
     connected_ = true;
@@ -122,7 +120,7 @@ Status CubeConnectionImpl::Connect(struct AdbcError* error) {
   }
 }
 
-Status CubeConnectionImpl::Disconnect(struct AdbcError* error) {
+Status CubeConnectionImpl::Disconnect(struct AdbcError *error) {
   if (connection_mode_ == ConnectionMode::Native) {
     if (native_client_) {
       native_client_->Close();
@@ -138,9 +136,9 @@ Status CubeConnectionImpl::Disconnect(struct AdbcError* error) {
   return status::Ok();
 }
 
-Status CubeConnectionImpl::ExecuteQuery(const std::string& query,
-                                       struct ArrowArrayStream* out,
-                                       struct AdbcError* error) {
+Status CubeConnectionImpl::ExecuteQuery(const std::string &query,
+                                        struct ArrowArrayStream *out,
+                                        struct AdbcError *error) {
   if (!connected_) {
     return status::InvalidState("Connection not established");
   }
@@ -158,9 +156,9 @@ Status CubeConnectionImpl::ExecuteQuery(const std::string& query,
   return status::NotImplemented("PostgreSQL wire protocol not yet implemented");
 }
 
-Status CubeConnectionImpl::GetTableSchema(const std::string& table_schema,
-                                         const std::string& table_name,
-                                         struct ArrowSchema* schema) {
+Status CubeConnectionImpl::GetTableSchema(const std::string &table_schema,
+                                          const std::string &table_name,
+                                          struct ArrowSchema *schema) {
   if (!connected_) {
     return status::InvalidState("Connection not established");
   }
@@ -175,15 +173,17 @@ Status CubeConnectionImpl::GetTableSchema(const std::string& table_schema,
 
   // Query information_schema.columns to get table metadata
   // Cube SQL follows PostgreSQL conventions for information_schema
-  std::string query =
-      "SELECT column_name, data_type, is_nullable "
-      "FROM information_schema.columns "
-      "WHERE table_name = '" + table_name + "'";
+  std::string query = "SELECT column_name, data_type, is_nullable "
+                      "FROM information_schema.columns "
+                      "WHERE table_name = '" +
+    // TODO avoid SQL injection here: use parameters
+                      table_name + "'";
 
   if (!table_schema.empty()) {
+    // TODO avoid SQL injection here: use parameters
     query += " AND table_schema = '" + table_schema + "'";
   }
-
+  // TODO avoid SQL injection here: use parameters
   query += " ORDER BY ordinal_position";
 
   // Execute query to get column information
@@ -202,12 +202,11 @@ Status CubeConnectionImpl::GetTableSchema(const std::string& table_schema,
   return status::Ok();
 }
 
-
 // CubeConnection implementation
 
-Status CubeConnection::InitImpl(void* raw_connection) {
+Status CubeConnection::InitImpl(void *raw_connection) {
   // raw_connection is the AdbcDatabase* passed from CConnectionInit
-  auto* cube_database = static_cast<CubeDatabase*>(raw_connection);
+  auto *cube_database = static_cast<CubeDatabase *>(raw_connection);
   impl_ = std::make_unique<CubeConnectionImpl>(*cube_database);
 
   struct AdbcError error = ADBC_ERROR_INIT;
@@ -231,15 +230,17 @@ Status CubeConnection::ReleaseImpl() {
   return status::Ok();
 }
 
-Status CubeConnection::SetOptionImpl(std::string_view key, driver::Option value) {
+Status CubeConnection::SetOptionImpl(std::string_view key,
+                                     driver::Option value) {
   // Connection-specific options can be added here
   return status::NotImplemented("Connection options not yet implemented");
 }
 
-Status CubeConnection::GetTableSchemaImpl(std::optional<std::string_view> catalog,
-                                         std::optional<std::string_view> db_schema,
-                                         std::string_view table_name,
-                                         struct ArrowSchema* schema) {
+Status
+CubeConnection::GetTableSchemaImpl(std::optional<std::string_view> catalog,
+                                   std::optional<std::string_view> db_schema,
+                                   std::string_view table_name,
+                                   struct ArrowSchema *schema) {
   if (!impl_) {
     return status::InvalidState("Connection not initialized");
   }
@@ -253,11 +254,12 @@ Status CubeConnection::GetTableSchemaImpl(std::optional<std::string_view> catalo
   }
 
   // Convert string_view to std::string for CubeConnectionImpl
-  std::string schema_name = db_schema.has_value() ? std::string(*db_schema) : "";
+  std::string schema_name =
+      db_schema.has_value() ? std::string(*db_schema) : "";
   std::string tbl_name = std::string(table_name);
 
   // Delegate to impl for schema retrieval
   return impl_->GetTableSchema(schema_name, tbl_name, schema);
 }
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

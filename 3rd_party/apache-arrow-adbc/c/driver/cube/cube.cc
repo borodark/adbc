@@ -25,14 +25,14 @@
 #include <nanoarrow/nanoarrow.hpp>
 
 #define ADBC_FRAMEWORK_USE_FMT
+#include "driver/cube/connection.h"
+#include "driver/cube/database.h"
+#include "driver/cube/statement.h"
 #include "driver/framework/base_driver.h"
 #include "driver/framework/connection.h"
 #include "driver/framework/database.h"
 #include "driver/framework/statement.h"
 #include "driver/framework/status.h"
-#include "driver/cube/database.h"
-#include "driver/cube/connection.h"
-#include "driver/cube/statement.h"
 
 namespace adbc::cube {
 
@@ -40,7 +40,7 @@ using driver::Result;
 using driver::Status;
 namespace status = adbc::driver::status;
 
-}  // namespace adbc::cube
+} // namespace adbc::cube
 
 // Create the driver template
 using CubeDriver =
@@ -52,106 +52,109 @@ using CubeDriver =
 extern "C" {
 
 // Database entrypoints
-AdbcStatusCode AdbcDatabaseNew(struct AdbcDatabase* database, struct AdbcError* error) {
+AdbcStatusCode AdbcDatabaseNew(struct AdbcDatabase *database,
+                               struct AdbcError *error) {
   return CubeDriver::CNew<>(database, error);
 }
 
-AdbcStatusCode AdbcDatabaseSetOption(struct AdbcDatabase* database,
-                                      const char* key, const char* value,
-                                      struct AdbcError* error) {
+AdbcStatusCode AdbcDatabaseSetOption(struct AdbcDatabase *database,
+                                     const char *key, const char *value,
+                                     struct AdbcError *error) {
   return CubeDriver::CSetOption<>(database, key, value, error);
 }
 
-AdbcStatusCode AdbcDatabaseInit(struct AdbcDatabase* database,
-                                 struct AdbcError* error) {
+AdbcStatusCode AdbcDatabaseInit(struct AdbcDatabase *database,
+                                struct AdbcError *error) {
   return CubeDriver::CDatabaseInit(database, error);
 }
 
-AdbcStatusCode AdbcDatabaseRelease(struct AdbcDatabase* database,
-                                    struct AdbcError* error) {
+AdbcStatusCode AdbcDatabaseRelease(struct AdbcDatabase *database,
+                                   struct AdbcError *error) {
   return CubeDriver::CRelease<>(database, error);
 }
 
 // Connection entrypoints
-AdbcStatusCode AdbcConnectionNew(struct AdbcConnection* connection,
-                                  struct AdbcError* error) {
+AdbcStatusCode AdbcConnectionNew(struct AdbcConnection *connection,
+                                 struct AdbcError *error) {
   return CubeDriver::CNew<>(connection, error);
 }
 
-AdbcStatusCode AdbcConnectionInit(struct AdbcConnection* connection,
-                                   struct AdbcDatabase* database,
-                                   struct AdbcError* error) {
+AdbcStatusCode AdbcConnectionInit(struct AdbcConnection *connection,
+                                  struct AdbcDatabase *database,
+                                  struct AdbcError *error) {
   return CubeDriver::CConnectionInit(connection, database, error);
 }
 
-AdbcStatusCode AdbcConnectionSetOption(struct AdbcConnection* connection,
-                                        const char* key, const char* value,
-                                        struct AdbcError* error) {
+AdbcStatusCode AdbcConnectionSetOption(struct AdbcConnection *connection,
+                                       const char *key, const char *value,
+                                       struct AdbcError *error) {
   return CubeDriver::CSetOption<>(connection, key, value, error);
 }
 
-AdbcStatusCode AdbcConnectionRelease(struct AdbcConnection* connection,
-                                      struct AdbcError* error) {
+AdbcStatusCode AdbcConnectionRelease(struct AdbcConnection *connection,
+                                     struct AdbcError *error) {
   return CubeDriver::CRelease<>(connection, error);
 }
 
 // Statement entrypoints
-AdbcStatusCode AdbcStatementNew(struct AdbcConnection* connection,
-                                 struct AdbcStatement* statement,
-                                 struct AdbcError* error) {
+AdbcStatusCode AdbcStatementNew(struct AdbcConnection *connection,
+                                struct AdbcStatement *statement,
+                                struct AdbcError *error) {
   return CubeDriver::CStatementNew(connection, statement, error);
 }
 
-AdbcStatusCode AdbcStatementSetOption(struct AdbcStatement* statement,
-                                       const char* key, const char* value,
-                                       struct AdbcError* error) {
+AdbcStatusCode AdbcStatementSetOption(struct AdbcStatement *statement,
+                                      const char *key, const char *value,
+                                      struct AdbcError *error) {
   return CubeDriver::CSetOption<>(statement, key, value, error);
 }
 
-AdbcStatusCode AdbcStatementPrepare(struct AdbcStatement* statement,
-                                     struct AdbcError* error) {
+AdbcStatusCode AdbcStatementPrepare(struct AdbcStatement *statement,
+                                    struct AdbcError *error) {
   return CubeDriver::CStatementPrepare(statement, error);
 }
 
-AdbcStatusCode AdbcStatementBind(struct AdbcStatement* statement,
-                                  struct ArrowArray* values,
-                                  struct ArrowSchema* schema,
-                                  struct AdbcError* error) {
+AdbcStatusCode AdbcStatementBind(struct AdbcStatement *statement,
+                                 struct ArrowArray *values,
+                                 struct ArrowSchema *schema,
+                                 struct AdbcError *error) {
   return CubeDriver::CStatementBind(statement, values, schema, error);
 }
 
-AdbcStatusCode AdbcStatementBindStream(struct AdbcStatement* statement,
-                                        struct ArrowArrayStream* out,
-                                        struct AdbcError* error) {
+AdbcStatusCode AdbcStatementBindStream(struct AdbcStatement *statement,
+                                       struct ArrowArrayStream *out,
+                                       struct AdbcError *error) {
   return CubeDriver::CStatementBindStream(statement, out, error);
 }
 
-AdbcStatusCode AdbcStatementGetParameterSchema(struct AdbcStatement* statement,
-                                                struct ArrowSchema* schema,
-                                                struct AdbcError* error) {
+AdbcStatusCode AdbcStatementGetParameterSchema(struct AdbcStatement *statement,
+                                               struct ArrowSchema *schema,
+                                               struct AdbcError *error) {
   return CubeDriver::CStatementGetParameterSchema(statement, schema, error);
 }
 
-AdbcStatusCode AdbcStatementExecuteQuery(struct AdbcStatement* statement,
-                                          struct ArrowArrayStream* out,
-                                          int64_t* rows_affected,
-                                          struct AdbcError* error) {
-  return CubeDriver::CStatementExecuteQuery(statement, out, rows_affected, error);
+AdbcStatusCode AdbcStatementExecuteQuery(struct AdbcStatement *statement,
+                                         struct ArrowArrayStream *out,
+                                         int64_t *rows_affected,
+                                         struct AdbcError *error) {
+  return CubeDriver::CStatementExecuteQuery(statement, out, rows_affected,
+                                            error);
 }
 
-AdbcStatusCode AdbcStatementRelease(struct AdbcStatement* statement,
-                                     struct AdbcError* error) {
+AdbcStatusCode AdbcStatementRelease(struct AdbcStatement *statement,
+                                    struct AdbcError *error) {
   return CubeDriver::CRelease<>(statement, error);
 }
 
 // Driver initialization function for ADBC driver manager
 ADBC_EXPORT
-AdbcStatusCode AdbcDriverInit(int version, void* raw_driver, struct AdbcError* error) {
+AdbcStatusCode AdbcDriverInit(int version, void *raw_driver,
+                              struct AdbcError *error) {
   if (version != ADBC_VERSION_1_1_0 && version != ADBC_VERSION_1_0_0) {
     return ADBC_STATUS_NOT_IMPLEMENTED;
   }
 
-  auto* driver = reinterpret_cast<struct AdbcDriver*>(raw_driver);
+  auto *driver = reinterpret_cast<struct AdbcDriver *>(raw_driver);
   if (driver == nullptr) {
     return ADBC_STATUS_INVALID_ARGUMENT;
   }
@@ -192,4 +195,4 @@ AdbcStatusCode AdbcDriverInit(int version, void* raw_driver, struct AdbcError* e
   return ADBC_STATUS_OK;
 }
 
-}  // extern "C"
+} // extern "C"

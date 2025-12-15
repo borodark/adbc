@@ -29,7 +29,7 @@
 namespace adbc::cube {
 
 class CubeQuickstartTest : public ::testing::Test {
- public:
+public:
   void SetUp() override {
     ASSERT_EQ(AdbcDatabaseNew(&driver_, &database_, &error_), ADBC_STATUS_OK)
         << error_.message;
@@ -45,7 +45,7 @@ class CubeQuickstartTest : public ::testing::Test {
     }
   }
 
- protected:
+protected:
   struct AdbcDriver driver_ = {};
   struct AdbcDatabase database_ = {};
   struct AdbcError error_ = {};
@@ -58,13 +58,14 @@ TEST_F(CubeQuickstartTest, DatabaseNewRelease) {
 
 TEST_F(CubeQuickstartTest, CanSetOptions) {
   // Test setting various database options
-  ASSERT_EQ(AdbcDatabaseSetOption(&database_, "adbc.cube.host", "localhost",
-                                  &error_),
-            ADBC_STATUS_OK)
+  ASSERT_EQ(
+      AdbcDatabaseSetOption(&database_, "adbc.cube.host", "localhost", &error_),
+      ADBC_STATUS_OK)
       << error_.message;
 
-  ASSERT_EQ(AdbcDatabaseSetOption(&database_, "adbc.cube.port", "4444", &error_),
-            ADBC_STATUS_OK)
+  ASSERT_EQ(
+      AdbcDatabaseSetOption(&database_, "adbc.cube.port", "4444", &error_),
+      ADBC_STATUS_OK)
       << error_.message;
 
   ASSERT_EQ(AdbcDatabaseSetOption(&database_, "adbc.cube.token", "test-token",
@@ -75,8 +76,9 @@ TEST_F(CubeQuickstartTest, CanSetOptions) {
 
 TEST_F(CubeQuickstartTest, InvalidOption) {
   // Test handling of unknown options
-  ASSERT_EQ(AdbcDatabaseSetOption(&database_, "unknown.option", "value", &error_),
-            ADBC_STATUS_NOT_IMPLEMENTED);
+  ASSERT_EQ(
+      AdbcDatabaseSetOption(&database_, "unknown.option", "value", &error_),
+      ADBC_STATUS_NOT_IMPLEMENTED);
 }
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

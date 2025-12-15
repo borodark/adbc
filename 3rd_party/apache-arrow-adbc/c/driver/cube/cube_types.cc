@@ -23,13 +23,15 @@
 namespace adbc::cube {
 
 // Helper to normalize SQL type names (lowercase, trim whitespace)
-static std::string NormalizeTypeName(const std::string& type_name) {
+static std::string NormalizeTypeName(const std::string &type_name) {
   std::string normalized = type_name;
   // Trim leading/trailing whitespace
   size_t start = 0;
   size_t end = normalized.length();
-  while (start < end && std::isspace(normalized[start])) start++;
-  while (end > start && std::isspace(normalized[end - 1])) end--;
+  while (start < end && std::isspace(normalized[start]))
+    start++;
+  while (end > start && std::isspace(normalized[end - 1]))
+    end--;
   normalized = normalized.substr(start, end - start);
   // Convert to lowercase
   std::transform(normalized.begin(), normalized.end(), normalized.begin(),
@@ -37,7 +39,7 @@ static std::string NormalizeTypeName(const std::string& type_name) {
   return normalized;
 }
 
-ArrowType CubeTypeMapper::MapCubeTypeToArrowType(const std::string& cube_type) {
+ArrowType CubeTypeMapper::MapCubeTypeToArrowType(const std::string &cube_type) {
   std::string normalized = NormalizeTypeName(cube_type);
 
   // Integer types
@@ -58,7 +60,8 @@ ArrowType CubeTypeMapper::MapCubeTypeToArrowType(const std::string& cube_type) {
   if (normalized == "ubigint" || normalized == "uint8") {
     return NANOARROW_TYPE_UINT64;
   }
-  if (normalized == "uinteger" || normalized == "uint" || normalized == "uint4") {
+  if (normalized == "uinteger" || normalized == "uint" ||
+      normalized == "uint4") {
     return NANOARROW_TYPE_UINT32;
   }
   if (normalized == "usmallint" || normalized == "uint2") {
@@ -89,7 +92,8 @@ ArrowType CubeTypeMapper::MapCubeTypeToArrowType(const std::string& cube_type) {
   }
 
   // Binary types
-  if (normalized == "bytea" || normalized == "binary" || normalized == "varbinary") {
+  if (normalized == "bytea" || normalized == "binary" ||
+      normalized == "varbinary") {
     return NANOARROW_TYPE_BINARY;
   }
 
@@ -105,14 +109,16 @@ ArrowType CubeTypeMapper::MapCubeTypeToArrowType(const std::string& cube_type) {
   }
 
   // Timestamp types
-  if (normalized == "timestamp" || normalized == "timestamp without time zone" ||
+  if (normalized == "timestamp" ||
+      normalized == "timestamp without time zone" ||
       normalized == "timestamp with time zone" || normalized == "timestamptz") {
     return NANOARROW_TYPE_TIMESTAMP;
   }
 
   // Decimal/numeric types - map to string for safety
   // (would need decimal128 support for proper handling)
-  if (normalized == "numeric" || normalized == "decimal" || normalized == "number") {
+  if (normalized == "numeric" || normalized == "decimal" ||
+      normalized == "number") {
     return NANOARROW_TYPE_STRING;
   }
 
@@ -133,43 +139,43 @@ ArrowType CubeTypeMapper::MapCubeTypeToArrowType(const std::string& cube_type) {
 
 std::string CubeTypeMapper::GetArrowTypeDescription(ArrowType type) {
   switch (type) {
-    case NANOARROW_TYPE_NA:
-      return "null";
-    case NANOARROW_TYPE_BOOL:
-      return "bool";
-    case NANOARROW_TYPE_INT8:
-      return "int8";
-    case NANOARROW_TYPE_INT16:
-      return "int16";
-    case NANOARROW_TYPE_INT32:
-      return "int32";
-    case NANOARROW_TYPE_INT64:
-      return "int64";
-    case NANOARROW_TYPE_UINT8:
-      return "uint8";
-    case NANOARROW_TYPE_UINT16:
-      return "uint16";
-    case NANOARROW_TYPE_UINT32:
-      return "uint32";
-    case NANOARROW_TYPE_UINT64:
-      return "uint64";
-    case NANOARROW_TYPE_FLOAT:
-      return "float";
-    case NANOARROW_TYPE_DOUBLE:
-      return "double";
-    case NANOARROW_TYPE_STRING:
-      return "string";
-    case NANOARROW_TYPE_BINARY:
-      return "binary";
-    case NANOARROW_TYPE_DATE32:
-      return "date32";
-    case NANOARROW_TYPE_TIME64:
-      return "time64";
-    case NANOARROW_TYPE_TIMESTAMP:
-      return "timestamp";
-    default:
-      return "unknown";
+  case NANOARROW_TYPE_NA:
+    return "null";
+  case NANOARROW_TYPE_BOOL:
+    return "bool";
+  case NANOARROW_TYPE_INT8:
+    return "int8";
+  case NANOARROW_TYPE_INT16:
+    return "int16";
+  case NANOARROW_TYPE_INT32:
+    return "int32";
+  case NANOARROW_TYPE_INT64:
+    return "int64";
+  case NANOARROW_TYPE_UINT8:
+    return "uint8";
+  case NANOARROW_TYPE_UINT16:
+    return "uint16";
+  case NANOARROW_TYPE_UINT32:
+    return "uint32";
+  case NANOARROW_TYPE_UINT64:
+    return "uint64";
+  case NANOARROW_TYPE_FLOAT:
+    return "float";
+  case NANOARROW_TYPE_DOUBLE:
+    return "double";
+  case NANOARROW_TYPE_STRING:
+    return "string";
+  case NANOARROW_TYPE_BINARY:
+    return "binary";
+  case NANOARROW_TYPE_DATE32:
+    return "date32";
+  case NANOARROW_TYPE_TIME64:
+    return "time64";
+  case NANOARROW_TYPE_TIMESTAMP:
+    return "timestamp";
+  default:
+    return "unknown";
   }
 }
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

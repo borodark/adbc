@@ -41,24 +41,22 @@ class CubeConnectionImpl;
 
 // Cube SQL statement implementation
 class CubeStatementImpl {
- public:
-  explicit CubeStatementImpl(CubeConnectionImpl* connection,
-                            std::string query);
+public:
+  explicit CubeStatementImpl(CubeConnectionImpl *connection, std::string query);
   ~CubeStatementImpl() = default;
 
-  Status Prepare(struct AdbcError* error);
-  Status Bind(struct ArrowArray* values, struct ArrowSchema* schema,
-              struct AdbcError* error);
-  Status BindStream(struct ArrowArrayStream* values,
-                    struct AdbcError* error);
-  Result<int64_t> ExecuteQuery(struct ArrowArrayStream* out);
+  Status Prepare(struct AdbcError *error);
+  Status Bind(struct ArrowArray *values, struct ArrowSchema *schema,
+              struct AdbcError *error);
+  Status BindStream(struct ArrowArrayStream *values, struct AdbcError *error);
+  Result<int64_t> ExecuteQuery(struct ArrowArrayStream *out);
   Result<int64_t> ExecuteUpdate();
 
-  const std::string& query() const { return query_; }
-  void SetQuery(const std::string& query) { query_ = query; }
+  const std::string &query() const { return query_; }
+  void SetQuery(const std::string &query) { query_ = query; }
 
- private:
-  CubeConnectionImpl* connection_;  // Non-owning
+private:
+  CubeConnectionImpl *connection_; // Non-owning
   std::string query_;
   bool prepared_ = false;
 
@@ -69,41 +67,45 @@ class CubeStatementImpl {
 };
 
 class CubeStatement : public driver::Statement<CubeStatement> {
- public:
+public:
   [[maybe_unused]] constexpr static std::string_view kErrorPrefix = "[Cube]";
 
   ~CubeStatement() = default;
 
-  Status InitImpl(void* parent);
+  Status InitImpl(void *parent);
   Status ReleaseImpl();
-  Status PrepareImpl(driver::Statement<CubeStatement>::QueryState& state);
-  Status BindImpl(driver::Statement<CubeStatement>::QueryState& state);
-  Status BindStreamImpl(driver::Statement<CubeStatement>::QueryState& state,
-                       struct ArrowArrayStream* values);
+  Status PrepareImpl(driver::Statement<CubeStatement>::QueryState &state);
+  Status BindImpl(driver::Statement<CubeStatement>::QueryState &state);
+  Status BindStreamImpl(driver::Statement<CubeStatement>::QueryState &state,
+                        struct ArrowArrayStream *values);
 
-  Result<int64_t> ExecuteQueryImpl(struct ArrowArrayStream* out);
+  Result<int64_t> ExecuteQueryImpl(struct ArrowArrayStream *out);
   Result<int64_t> ExecuteUpdateImpl();
 
   // Overloads for Query and Prepared state
-  Result<int64_t> ExecuteQueryImpl(driver::Statement<CubeStatement>::QueryState& state,
-                                   struct ArrowArrayStream* out);
+  Result<int64_t>
+  ExecuteQueryImpl(driver::Statement<CubeStatement>::QueryState &state,
+                   struct ArrowArrayStream *out);
 
-  Result<int64_t> ExecuteQueryImpl(driver::Statement<CubeStatement>::PreparedState& state,
-                                   struct ArrowArrayStream* out);
+  Result<int64_t>
+  ExecuteQueryImpl(driver::Statement<CubeStatement>::PreparedState &state,
+                   struct ArrowArrayStream *out);
 
-  Result<int64_t> ExecuteUpdateImpl(driver::Statement<CubeStatement>::QueryState& state) {
+  Result<int64_t>
+  ExecuteUpdateImpl(driver::Statement<CubeStatement>::QueryState &state) {
     return ExecuteUpdateImpl();
   }
 
-  Result<int64_t> ExecuteUpdateImpl(driver::Statement<CubeStatement>::PreparedState& state) {
+  Result<int64_t>
+  ExecuteUpdateImpl(driver::Statement<CubeStatement>::PreparedState &state) {
     return ExecuteUpdateImpl();
   }
 
   Status SetOptionImpl(std::string_view key, driver::Option value);
 
- private:
-  CubeConnectionImpl* connection_ = nullptr;  // Non-owning
+private:
+  CubeConnectionImpl *connection_ = nullptr; // Non-owning
   std::unique_ptr<CubeStatementImpl> impl_;
 };
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

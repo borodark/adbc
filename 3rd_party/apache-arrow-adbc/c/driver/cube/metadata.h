@@ -27,19 +27,20 @@ namespace adbc::cube {
 
 // Helper for building Arrow schemas from Cube SQL metadata
 class MetadataBuilder {
- public:
+public:
   MetadataBuilder();
   ~MetadataBuilder();
 
   // Add a column to the schema
-  void AddColumn(const std::string& column_name, const std::string& cube_sql_type);
+  void AddColumn(const std::string &column_name,
+                 const std::string &cube_sql_type);
 
   // Build the final Arrow schema
   struct ArrowSchema Build();
 
- private:
+private:
   std::vector<std::string> column_names_;
   std::vector<std::string> column_types_;
 };
 
-}  // namespace adbc::cube
+} // namespace adbc::cube

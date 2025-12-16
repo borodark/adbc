@@ -847,6 +847,98 @@ ArrowErrorCode CubeArrowReader::BuildArrayForField(
     break;
   }
 
+  case NANOARROW_TYPE_DATE32: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const int32_t *values = reinterpret_cast<const int32_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_DATE64: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const int64_t *values = reinterpret_cast<const int64_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_TIME64: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const int64_t *values = reinterpret_cast<const int64_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_TIMESTAMP: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const int64_t *values = reinterpret_cast<const int64_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
   default:
     ArrowErrorSet(error, "Unsupported Arrow type: %d", arrow_type);
     ArrowArrayRelease(out);

@@ -202,6 +202,10 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string &sql,
     return status;
   }
 
+  // Initialize output stream to null state BEFORE any processing
+  // This ensures it's safe to use even if we return early with an error
+  memset(out, 0, sizeof(*out));
+
   // Collect Arrow IPC batch data (which includes schema)
   // NOTE: We only use the batch data, not the schema-only message,
   // because each is a complete Arrow IPC stream with EOS markers.
@@ -275,9 +279,6 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string &sql,
     SetNativeClientError(error, "No Arrow IPC data received");
     return ADBC_STATUS_INVALID_DATA;
   }
-
-  // Initialize output stream to null state in case of error
-  memset(out, 0, sizeof(*out));
 
   try {
     auto reader = std::make_unique<CubeArrowReader>(std::move(arrow_ipc_data));

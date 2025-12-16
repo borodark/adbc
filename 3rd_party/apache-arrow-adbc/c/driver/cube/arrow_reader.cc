@@ -939,6 +939,41 @@ ArrowErrorCode CubeArrowReader::BuildArrayForField(
     break;
   }
 
+  case NANOARROW_TYPE_BINARY: {
+    const uint8_t *offsets_buffer = nullptr;
+    int64_t offsets_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &offsets_buffer,
+                  &offsets_size);
+    (*buffer_index_inout)++;
+
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const int32_t *offsets = reinterpret_cast<const int32_t *>(offsets_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        int32_t start = offsets[i];
+        int32_t end = offsets[i + 1];
+        int32_t length = end - start;
+        struct ArrowBufferView view;
+        view.data.as_uint8 = data_buffer + start;
+        view.size_bytes = length;
+        status = ArrowArrayAppendBytes(out, view);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
   default:
     ArrowErrorSet(error, "Unsupported Arrow type: %d", arrow_type);
     ArrowArrayRelease(out);

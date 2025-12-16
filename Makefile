@@ -98,6 +98,30 @@ $(ADBC_DRIVER_CUBE_LIB): adbc
 .PHONY: cube_driver
 cube_driver: $(ADBC_DRIVER_CUBE_LIB)
 
+.PHONY: test
+test: priv_dir
+	@ mkdir -p "$(BUILD_DIR)/cmake/test" && \
+	cd "$(BUILD_DIR)/cmake/test" && \
+	cmake --no-warn-unused-cli \
+		-DADBC_BUILD_SHARED="ON" \
+		-DADBC_DRIVER_MANAGER="ON" \
+		-DADBC_DRIVER_CUBE="ON" \
+		-DADBC_DRIVER_POSTGRESQL="OFF" \
+		-DADBC_DRIVER_SQLITE="OFF" \
+		-DADBC_DRIVER_FLIGHTSQL="OFF" \
+		-DADBC_DRIVER_SNOWFLAKE="OFF" \
+		-DADBC_BUILD_STATIC="OFF" \
+		-DADBC_BUILD_TESTS="ON" \
+		-DADBC_USE_ASAN="OFF" \
+		-DADBC_USE_UBSAN="OFF" \
+		-DCMAKE_BUILD_TYPE="$(CMAKE_BUILD_TYPE)" \
+		-DCMAKE_INSTALL_PREFIX="$(PRIV_DIR)" \
+		-DADBC_DEPENDENCY_SOURCE=BUNDLED \
+		$(CMAKE_CONFIGURE_FLAGS) $(CMAKE_ADBC_OPTIONS) "$(ADBC_C_SRC)" && \
+	cmake --build . -j && \
+	cd driver/cube && \
+	./adbc-driver-cube-types-integration-test
+
 $(NIF_SO_REL): priv_dir adbc $(C_SRC_REL)/adbc_nif_resource.hpp $(C_SRC_REL)/adbc_nif.cpp $(C_SRC_REL)/nif_utils.hpp $(C_SRC_REL)/nif_utils.cpp
 	@ mkdir -p "$(CMAKE_ADBC_NIF_BUILD_DIR)" && \
 	cd "$(CMAKE_ADBC_NIF_BUILD_DIR)" && \

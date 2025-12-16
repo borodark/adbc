@@ -144,4 +144,23 @@ if(ADBC_BUILD_TESTS)
                              PRIVATE ${REPOSITORY_ROOT}/c/ ${REPOSITORY_ROOT}/c/include/
                                      ${REPOSITORY_ROOT}/c/driver)
   adbc_configure_target(adbc-driver-cube-test)
+
+  add_test_case(driver_cube_types_integration_test
+                PREFIX
+                adbc
+                EXTRA_LABELS
+                driver-cube-integration
+                SOURCES
+                types_integration_test.cc
+                EXTRA_LINK_LIBS
+                adbc_driver_common
+                adbc_driver_manager_shared
+                nanoarrow
+                ${TEST_LINK_LIBS})
+  target_compile_features(adbc-driver-cube-types-integration-test PRIVATE cxx_std_17)
+  target_include_directories(adbc-driver-cube-types-integration-test SYSTEM
+                             PRIVATE ${REPOSITORY_ROOT}/c/ ${REPOSITORY_ROOT}/c/include/
+                                     ${REPOSITORY_ROOT}/c/driver
+                                     ${REPOSITORY_ROOT}/c/vendor/nanoarrow)
+  adbc_configure_target(adbc-driver-cube-types-integration-test)
 endif()

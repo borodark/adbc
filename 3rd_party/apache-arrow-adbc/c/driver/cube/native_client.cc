@@ -202,8 +202,8 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string &sql,
     return status;
   }
 
-  // Initialize output stream to null state BEFORE any processing
-  // This ensures it's safe to use even if we return early with an error
+  // Initialize output stream to a safe empty state
+  // This ensures the stream can be safely released even if we return early with an error
   memset(out, 0, sizeof(*out));
 
   // Collect Arrow IPC batch data (which includes schema)
@@ -292,6 +292,11 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string &sql,
       DEBUG_LOG("[NativeClient::ExecuteQuery] Init failed with status %d: %s\n",
                 init_status, error_msg.c_str());
       return ADBC_STATUS_INTERNAL;
+    }
+
+    // Release the empty stream before replacing it with real data
+    if (out->release != nullptr) {
+      out->release(out);
     }
 
     // Export to ArrowArrayStream

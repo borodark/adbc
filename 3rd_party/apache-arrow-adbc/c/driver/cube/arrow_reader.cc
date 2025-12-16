@@ -559,6 +559,75 @@ ArrowErrorCode CubeArrowReader::BuildArrayForField(
 
   // Type-specific data extraction
   switch (arrow_type) {
+  case NANOARROW_TYPE_INT8: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const int8_t *values = reinterpret_cast<const int8_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_INT16: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const int16_t *values = reinterpret_cast<const int16_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_INT32: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const int32_t *values = reinterpret_cast<const int32_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
   case NANOARROW_TYPE_INT64: {
     const uint8_t *data_buffer = nullptr;
     int64_t data_size = 0;
@@ -571,6 +640,121 @@ ArrowErrorCode CubeArrowReader::BuildArrayForField(
       bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
       if (is_valid) {
         status = ArrowArrayAppendInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_UINT8: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const uint8_t *values = data_buffer;
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendUInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_UINT16: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const uint16_t *values = reinterpret_cast<const uint16_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendUInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_UINT32: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const uint32_t *values = reinterpret_cast<const uint32_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendUInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_UINT64: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const uint64_t *values = reinterpret_cast<const uint64_t *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendUInt(out, values[i]);
+      } else {
+        status = ArrowArrayAppendNull(out, 1);
+      }
+      if (status != NANOARROW_OK) {
+        ArrowArrayRelease(out);
+        return status;
+      }
+    }
+    break;
+  }
+
+  case NANOARROW_TYPE_FLOAT: {
+    const uint8_t *data_buffer = nullptr;
+    int64_t data_size = 0;
+    ExtractBuffer(batch, *buffer_index_inout, body_data, &data_buffer,
+                  &data_size);
+    (*buffer_index_inout)++;
+
+    const float *values = reinterpret_cast<const float *>(data_buffer);
+    for (int64_t i = 0; i < row_count; i++) {
+      bool is_valid = !validity_buffer || GetBit(validity_buffer, i);
+      if (is_valid) {
+        status = ArrowArrayAppendDouble(out, static_cast<double>(values[i]));
       } else {
         status = ArrowArrayAppendNull(out, 1);
       }

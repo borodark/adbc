@@ -21,7 +21,7 @@
 #endif
 
 #if CUBE_DEBUG_LOGGING
-#define DEBUG_LOG(...) DEBUG_LOG(__VA_ARGS__)
+#define DEBUG_LOG(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define DEBUG_LOG(...) ((void)0)
 #endif
@@ -327,6 +327,14 @@ int CubeArrowReader::MapFlatBufferTypeToArrow(int fb_type) {
     return NANOARROW_TYPE_BOOL;
   case org::apache::arrow::flatbuf::Type_Utf8:
     return NANOARROW_TYPE_STRING;
+  case org::apache::arrow::flatbuf::Type_Binary:
+    return NANOARROW_TYPE_BINARY;
+  case org::apache::arrow::flatbuf::Type_Date:
+    return NANOARROW_TYPE_DATE32; // Default to DATE32
+  case org::apache::arrow::flatbuf::Type_Time:
+    return NANOARROW_TYPE_TIME64; // Default to TIME64
+  case org::apache::arrow::flatbuf::Type_Timestamp:
+    return NANOARROW_TYPE_TIMESTAMP; // Default to TIMESTAMP
   default:
     DEBUG_LOG("[MapFlatBufferTypeToArrow] Unsupported type: %d\n", fb_type);
     return NANOARROW_TYPE_UNINITIALIZED;
@@ -339,8 +347,13 @@ int CubeArrowReader::GetBufferCountForType(int arrow_type) {
   case NANOARROW_TYPE_BOOL:
   case NANOARROW_TYPE_INT64:
   case NANOARROW_TYPE_DOUBLE:
+  case NANOARROW_TYPE_DATE32:
+  case NANOARROW_TYPE_DATE64:
+  case NANOARROW_TYPE_TIME64:
+  case NANOARROW_TYPE_TIMESTAMP:
     return 2; // validity + data
   case NANOARROW_TYPE_STRING:
+  case NANOARROW_TYPE_BINARY:
     return 3; // validity + offsets + data
   default:
     return 2;
@@ -431,7 +444,22 @@ ArrowErrorCode CubeArrowReader::ParseSchemaFlatBuffer(const uint8_t *fb_data,
 
   for (size_t i = 0; i < field_names_.size(); i++) {
     struct ArrowSchema *child = schema_.children[i];
-    status = ArrowSchemaSetType(child, static_cast<ArrowType>(field_types_[i]));
+    ArrowType arrow_type = static_cast<ArrowType>(field_types_[i]);
+
+    // Use ArrowSchemaSetTypeDateTime for temporal types that require time units
+    if (arrow_type == NANOARROW_TYPE_TIMESTAMP) {
+      // Default to microsecond precision with no timezone
+      status = ArrowSchemaSetTypeDateTime(child, NANOARROW_TYPE_TIMESTAMP,
+                                          NANOARROW_TIME_UNIT_MICRO, NULL);
+    } else if (arrow_type == NANOARROW_TYPE_TIME64) {
+      // TIME64 uses microsecond or nanosecond
+      status = ArrowSchemaSetTypeDateTime(child, NANOARROW_TYPE_TIME64,
+                                          NANOARROW_TIME_UNIT_MICRO, NULL);
+    } else {
+      // Regular types including DATE32, DATE64
+      status = ArrowSchemaSetType(child, arrow_type);
+    }
+
     if (status != NANOARROW_OK) {
       ArrowErrorSet(error, "Failed to set child type");
       ArrowSchemaRelease(&schema_);

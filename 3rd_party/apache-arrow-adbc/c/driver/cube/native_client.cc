@@ -4,7 +4,7 @@
 #endif
 
 #if CUBE_DEBUG_LOGGING
-#define DEBUG_LOG(...) DEBUG_LOG(__VA_ARGS__)
+#define DEBUG_LOG(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define DEBUG_LOG(...) ((void)0)
 #endif

@@ -97,7 +97,8 @@ Status CubeConnectionImpl::Connect(struct AdbcError *error) {
     }
 
     // Add output format parameter to use Arrow IPC
-    conn_str += " output_format=arrow_ipc";
+    // NOTE: Commented out temporarily - some CubeSQL versions don't support this
+    // conn_str += " output_format=arrow_ipc";
 
     // Connect to Cube SQL via PostgreSQL protocol
     conn_ = PQconnectdb(conn_str.c_str());

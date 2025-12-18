@@ -24,9 +24,28 @@ namespace adbc::cube {
 
 // Helper to set error messages
 void SetNativeClientError(AdbcError *error, const std::string &message) {
-  if (error) {
-    error->message = new char[message.length() + 1];
-    std::strcpy(error->message, message.c_str());
+  if (!error) {
+    return;
+  }
+
+  // If error already has a message, clean it up first
+  if (error->message && error->release) {
+    error->release(error);
+  }
+
+  // Allocate and set new message
+  error->message = new char[message.length() + 1];
+  std::strcpy(error->message, message.c_str());
+
+  // Set release callback if not already set
+  if (!error->release) {
+    error->release = [](struct AdbcError* err) {
+      if (err->message) {
+        delete[] err->message;
+        err->message = nullptr;
+      }
+      err->release = nullptr;
+    };
   }
 }
 
@@ -253,10 +272,27 @@ AdbcStatusCode NativeClient::ExecuteQuery(const std::string &sql,
       }
 
       case MessageType::Error: {
-        auto response = ErrorMessage::Decode(response_data.data() + 4,
-                                             response_data.size() - 4);
-        SetNativeClientError(error, "Query error [" + response->code +
-                                        "]: " + response->message);
+        DEBUG_LOG("[NativeClient::ExecuteQuery] Received Error message, size=%zu\n",
+                  response_data.size());
+
+        if (response_data.size() < 5) {  // Need at least length(4) + msgtype(1)
+          SetNativeClientError(error, "Error message too short");
+          return ADBC_STATUS_INVALID_DATA;
+        }
+
+        try {
+          auto response = ErrorMessage::Decode(response_data.data() + 4,
+                                               response_data.size() - 4);
+          DEBUG_LOG("[NativeClient::ExecuteQuery] Decoded error: code=%s, message=%s\n",
+                    response->code.c_str(), response->message.c_str());
+          SetNativeClientError(error, "Query error [" + response->code +
+                                          "]: " + response->message);
+        } catch (const std::exception &decode_error) {
+          DEBUG_LOG("[NativeClient::ExecuteQuery] Failed to decode error message: %s\n",
+                    decode_error.what());
+          SetNativeClientError(error, "Query failed (error message decode failed): " +
+                                          std::string(decode_error.what()));
+        }
         return ADBC_STATUS_UNKNOWN;
       }
 

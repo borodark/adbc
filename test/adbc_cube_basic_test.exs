@@ -174,4 +174,50 @@ defmodule Adbc.CubeBasicTest do
       # IO.inspect(df)
     end
   end
+
+  describe "error handling" do
+    test "handles non-existent table error", %{conn: conn} do
+      query = "SELECT * FROM nonexistent_table LIMIT 1"
+
+      assert {:error, %Adbc.Error{} = error} = Connection.query(conn, query)
+      assert error.message != nil
+    end
+
+    test "handles invalid SQL syntax error", %{conn: conn} do
+      query = "SELECT WHERE FROM"
+
+      assert {:error, %Adbc.Error{} = error} = Connection.query(conn, query)
+      assert error.message != nil
+    end
+
+    test "handles non-existent column error", %{conn: conn} do
+      query = "SELECT nonexistent_column FROM datatypes_test LIMIT 1"
+
+      assert {:error, %Adbc.Error{} = error} = Connection.query(conn, query)
+      assert error.message != nil
+    end
+
+    test "connection recovers after query errors", %{conn: conn} do
+      # First, cause an error
+      assert {:error, _} = Connection.query(conn, "SELECT * FROM nonexistent_table LIMIT 1")
+
+      # Then verify connection still works with valid query
+      assert {:ok, results} = Connection.query(conn, "SELECT int32_col FROM datatypes_test LIMIT 1")
+
+      materialized = Result.materialize(results)
+
+      # Connection recovered - we got a result with the expected column
+      assert %Result{
+               data: [
+                 %Column{
+                   name: "int32_col"
+                 }
+               ]
+             } = materialized
+
+      # Verify we got data back
+      assert length(materialized.data) == 1
+      assert hd(materialized.data).data != []
+    end
+  end
 end

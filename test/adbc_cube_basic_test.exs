@@ -180,21 +180,25 @@ defmodule Adbc.CubeBasicTest do
       query = "SELECT * FROM nonexistent_table LIMIT 1"
 
       assert {:error, %Adbc.Error{} = error} = Connection.query(conn, query)
-      assert error.message != nil
+      # Verify detailed error message is passed through from CubeSQL
+      assert error.message =~ "nonexistent_table"
+      assert error.message =~ "not found"
     end
 
     test "handles invalid SQL syntax error", %{conn: conn} do
       query = "SELECT WHERE FROM"
 
       assert {:error, %Adbc.Error{} = error} = Connection.query(conn, query)
-      assert error.message != nil
+      # Verify detailed error message is passed through
+      assert error.message =~ "parse" or error.message =~ "ParserError"
     end
 
     test "handles non-existent column error", %{conn: conn} do
       query = "SELECT nonexistent_column FROM datatypes_test LIMIT 1"
 
       assert {:error, %Adbc.Error{} = error} = Connection.query(conn, query)
-      assert error.message != nil
+      # Verify detailed error message is passed through
+      assert error.message =~ "nonexistent_column" or error.message =~ "Invalid identifier"
     end
 
     test "connection recovers after query errors", %{conn: conn} do

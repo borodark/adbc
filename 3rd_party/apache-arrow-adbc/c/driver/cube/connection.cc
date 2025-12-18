@@ -148,7 +148,8 @@ Status CubeConnectionImpl::ExecuteQuery(const std::string &query,
   if (native_client_) {
     auto status_code = native_client_->ExecuteQuery(query, out, error);
     if (status_code != ADBC_STATUS_OK) {
-      return status::fmt::InvalidState("Query execution failed");
+      // Error already set by native client, preserve the detailed message
+      return Status::FromAdbc(status_code, *error);
     }
     return status::Ok();
   }

@@ -109,7 +109,7 @@ add_arrow_lib(adbc_driver_cube
 
 foreach(LIB_TARGET ${ADBC_LIBRARIES})
   add_dependencies(${LIB_TARGET} generate_flatbuffer_headers)
-  target_compile_definitions(${LIB_TARGET} PRIVATE ADBC_EXPORTING CUBE_DEBUG_LOGGING=1)
+  target_compile_definitions(${LIB_TARGET} PRIVATE ADBC_EXPORTING CUBE_DEBUG_LOGGING=0)
   target_include_directories(${LIB_TARGET} SYSTEM
                              PRIVATE ${REPOSITORY_ROOT}/c/ ${REPOSITORY_ROOT}/c/include/
                                      ${REPOSITORY_ROOT}/c/driver ${LIBPQ_INCLUDE_DIRS}

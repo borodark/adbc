@@ -40,9 +40,20 @@ jobs:
           otp-version: "26.2"
           elixir-version: "1.15.8"
 
+      - name: Install FlatBuffers 2.0.8 from source
+        run: |
+          sudo apt-get update && sudo apt install -y build-essential cmake
+          cd /tmp
+          wget https://github.com/google/flatbuffers/archive/v2.0.8.tar.gz
+          tar -xzf v2.0.8.tar.gz
+          cd flatbuffers-2.0.8
+          cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+
       - name: Compile and Test
         run: |
-          sudo apt-get update && sudo apt install -y build-essential libflatbuffers-dev
           mix deps.get
           mix test
 

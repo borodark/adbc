@@ -15,25 +15,20 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Find FlatBuffers library (system package)
-# Try CMake config first (FlatBuffers >= 2.0)
-find_package(FlatBuffers QUIET
+# Find FlatBuffers library
+# Requires FlatBuffers >= 2.0 with CMake config support
+find_package(FlatBuffers REQUIRED
   HINTS
-    /usr/lib/x86_64-linux-gnu/cmake/flatbuffers  # Ubuntu/Debian
-    /usr/local/lib/cmake/flatbuffers              # Homebrew/source install
+    /usr/local/lib/cmake/flatbuffers              # Source install (CI)
+    /usr/lib/x86_64-linux-gnu/cmake/flatbuffers  # Ubuntu/Debian system package
     /opt/homebrew/lib/cmake/flatbuffers           # Homebrew on Apple Silicon
 )
 
-# Fallback to pkg-config for older versions (Ubuntu 22.04 ships 1.12.1)
-if(NOT FlatBuffers_FOUND)
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(FlatBuffers REQUIRED IMPORTED_TARGET flatbuffers)
-  set(FlatBuffers_LIBRARIES PkgConfig::FlatBuffers)
-  message(STATUS "FlatBuffers found via pkg-config: ${FlatBuffers_VERSION}")
-else()
-  # CMake config found - use the imported target
+if(FlatBuffers_FOUND)
   set(FlatBuffers_LIBRARIES flatbuffers::flatbuffers)
-  message(STATUS "FlatBuffers found via CMake config")
+  message(STATUS "FlatBuffers found: ${FlatBuffers_DIR}")
+else()
+  message(FATAL_ERROR "FlatBuffers >= 2.0 required. Install from https://github.com/google/flatbuffers or use: brew install flatbuffers")
 endif()
 
 # Find libpq for PostgreSQL protocol support

@@ -42,7 +42,7 @@ jobs:
 
       - name: Compile and Test
         run: |
-          sudo apt-get update && sudo apt-get install -y build-essential libflatbuffers-dev libflatbuffers2
+          sudo apt-get update && sudo apt install -y build-essential libflatbuffers-dev
           mix deps.get
           mix test
 

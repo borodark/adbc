@@ -40,18 +40,9 @@ jobs:
           otp-version: "26.2"
           elixir-version: "1.15.8"
 
-      - name: Install dependencies (example, usually not needed as they are preinstalled)
-        run: |
-          sudo apt-get update && sudo apt-get install -y build-essential libflatbuffers-dev
-          cd /usr && find . -name FlatBuffersConfig.cmake
-
-      - name: finding Nemo
-        run: |
-          cd /usr
-          find . -name FlatBuffersConfig.cmake
-          find . -name  flatbuffers-config.cmake
       - name: Compile and Test
         run: |
+          sudo apt-get update && sudo apt-get install -y build-essential libflatbuffers-dev libflatbuffers2
           mix deps.get
           mix test
 

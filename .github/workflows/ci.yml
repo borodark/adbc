@@ -43,6 +43,7 @@ jobs:
       - name: Compile and Test
         run: |
           sudo apt-get update && sudo apt install -y build-essential libflatbuffers-dev
+          export CMAKE_PREFIX_PATH="/usr/lib/x86_64-linux-gnu/cmake:$CMAKE_PREFIX_PATH"
           mix deps.get
           mix test
 

@@ -16,9 +16,15 @@
 # under the License.
 
 # Find FlatBuffers library (system package)
-find_package(FlatBuffers REQUIRED)
+# Add hints for common installation paths on various systems
+find_package(FlatBuffers REQUIRED
+  HINTS
+    /usr/lib/x86_64-linux-gnu/cmake/flatbuffers  # Ubuntu/Debian
+    /usr/local/lib/cmake/flatbuffers              # Homebrew/source install
+    /opt/homebrew/lib/cmake/flatbuffers           # Homebrew on Apple Silicon
+)
 if(NOT FlatBuffers_FOUND)
-  message(FATAL_ERROR "FlatBuffers not found. Install: sudo apt-get install libflatbuffers-dev")
+  message(FATAL_ERROR "FlatBuffers not found. Install: sudo apt-get install libflatbuffers-dev (Ubuntu/Debian) or brew install flatbuffers (macOS)")
 endif()
 
 # Find libpq for PostgreSQL protocol support

@@ -16,15 +16,24 @@
 # under the License.
 
 # Find FlatBuffers library (system package)
-# Add hints for common installation paths on various systems
-find_package(FlatBuffers REQUIRED
+# Try CMake config first (FlatBuffers >= 2.0)
+find_package(FlatBuffers QUIET
   HINTS
     /usr/lib/x86_64-linux-gnu/cmake/flatbuffers  # Ubuntu/Debian
     /usr/local/lib/cmake/flatbuffers              # Homebrew/source install
     /opt/homebrew/lib/cmake/flatbuffers           # Homebrew on Apple Silicon
 )
+
+# Fallback to pkg-config for older versions (Ubuntu 22.04 ships 1.12.1)
 if(NOT FlatBuffers_FOUND)
-  message(FATAL_ERROR "FlatBuffers not found. Install: sudo apt-get install libflatbuffers-dev (Ubuntu/Debian) or brew install flatbuffers (macOS)")
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(FlatBuffers REQUIRED IMPORTED_TARGET flatbuffers)
+  set(FlatBuffers_LIBRARIES PkgConfig::FlatBuffers)
+  message(STATUS "FlatBuffers found via pkg-config: ${FlatBuffers_VERSION}")
+else()
+  # CMake config found - use the imported target
+  set(FlatBuffers_LIBRARIES flatbuffers::flatbuffers)
+  message(STATUS "FlatBuffers found via CMake config")
 endif()
 
 # Find libpq for PostgreSQL protocol support

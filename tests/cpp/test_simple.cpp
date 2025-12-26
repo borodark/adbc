@@ -65,12 +65,12 @@ int main() {
         std::cerr << "   ❌ SELECT 1 failed: " << (error.message ? error.message : "unknown") << std::endl;
     }
 
-    // Test 2: Column query
+    // Test 2: Column query (using actual Cube schema)
     driver.StatementRelease(&statement, &error);
     driver.StatementNew(&connection, &statement, &error);
 
-    std::cout << "\n5. Test 2: SELECT int32_col FROM datatypes_test LIMIT 1" << std::endl;
-    driver.StatementSetSqlQuery(&statement, "SELECT int32_col FROM datatypes_test LIMIT 1", &error);
+    std::cout << "\n5. Test 2: SELECT count FROM orders_with_preagg LIMIT 1" << std::endl;
+    driver.StatementSetSqlQuery(&statement, "SELECT count FROM orders_with_preagg LIMIT 1", &error);
 
     ArrowArrayStream stream2 = {};
     int status = driver.StatementExecuteQuery(&statement, &stream2, &rows_affected, &error);

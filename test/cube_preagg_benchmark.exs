@@ -43,17 +43,16 @@ defmodule CubePreAggBenchmark do
         raise """
         Cube server (cubesqld) is not running on #{@cube_host}:#{@cube_port}.
 
-        Start it with CubeStore direct mode:
+        Start it with Arrow Native server:
           cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc
-          source .env
-          export CUBESQL_CUBESTORE_DIRECT=true
+          ./start-cubesqld.sh
+          # Or manually:
           export CUBESQL_CUBE_URL=http://localhost:4008/cubejs-api
-          export CUBESQL_CUBESTORE_URL=ws://127.0.0.1:3030/ws
           export CUBESQL_CUBE_TOKEN=test
-          export CUBESQL_PG_PORT=4444
           export CUBEJS_ARROW_PORT=4445
-          export RUST_LOG=info
-          ~/projects/learn_erl/cube/rust/cubesql/target/debug/cubesqld
+          export CUBESQL_ARROW_RESULTS_CACHE_ENABLED=true
+          export CUBESQL_LOG_LEVEL=info
+          ~/projects/learn_erl/cube/rust/cubesql/target/release/cubesqld
         """
 
       {:error, reason} ->

@@ -55,7 +55,7 @@ jobs:
       - name: Compile and Test
         run: |
           mix deps.get
-          mix test
+          mix test --exclude cube
 
   windows:
     if: contains(github.event.pull_request.labels.*.name, 'skip ci') != true
@@ -78,7 +78,7 @@ jobs:
         shell: bash
         run: |
           mix deps.get
-          mix test --exclude postgresql
+          mix test --exclude postgresql --exclude cube
 
   macos:
     if: contains(github.event.pull_request.labels.*.name, 'skip ci') != true
@@ -109,4 +109,4 @@ jobs:
           mix local.hex --force
           mix local.rebar --force
           mix deps.get
-          mix test --exclude postgresql
+          mix test --exclude postgresql --exclude cube

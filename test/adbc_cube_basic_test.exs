@@ -153,25 +153,45 @@ defmodule Adbc.CubeBasicTest do
   end
 
   describe "Cube queries" do
-    test "queries Cube dimension", %{conn: conn} do
+    test "queries orders_with_preagg cube", %{conn: conn} do
       query = """
       SELECT
-      orders.FUL,
-      MEASURE(orders.count),
-      MEASURE(orders.subtotal_amount),
-      MEASURE(orders.total_amount),
-      MEASURE(orders.tax_amount)
-      FROM
-      orders
-      GROUP BY
-      1
+        market_code,
+        brand_code,
+        count
+      FROM orders_with_preagg
+      LIMIT 10
       """
 
       assert {:ok, results} = Connection.query(conn, query)
+      materialized = Result.materialize(results)
 
-      IO.inspect(Result.materialize(results))
-      # df = DataFrame.from_query(conn, query,[])
-      # IO.inspect(df)
+      # Should have 3 columns
+      assert length(materialized.data) == 3
+
+      # Should have data
+      first_column = hd(materialized.data)
+      assert length(first_column.data) > 0
+    end
+
+    test "queries orders_no_preagg cube", %{conn: conn} do
+      query = """
+      SELECT
+        market_code,
+        count
+      FROM orders_no_preagg
+      LIMIT 5
+      """
+
+      assert {:ok, results} = Connection.query(conn, query)
+      materialized = Result.materialize(results)
+
+      # Should have 2 columns
+      assert length(materialized.data) == 2
+
+      # Should have data
+      first_column = hd(materialized.data)
+      assert length(first_column.data) > 0
     end
   end
 
@@ -194,11 +214,11 @@ defmodule Adbc.CubeBasicTest do
     end
 
     test "handles non-existent column error", %{conn: conn} do
-      query = "SELECT nonexistent_column FROM datatypes_test LIMIT 1"
+      query = "SELECT nonexistent_column FROM orders_with_preagg LIMIT 1"
 
       assert {:error, %Adbc.Error{} = error} = Connection.query(conn, query)
       # Verify detailed error message is passed through
-      assert error.message =~ "nonexistent_column" or error.message =~ "Invalid identifier"
+      assert error.message =~ "nonexistent_column" or error.message =~ "not found" or error.message =~ "Invalid identifier"
     end
 
     test "connection recovers after query errors", %{conn: conn} do
@@ -206,7 +226,7 @@ defmodule Adbc.CubeBasicTest do
       assert {:error, _} = Connection.query(conn, "SELECT * FROM nonexistent_table LIMIT 1")
 
       # Then verify connection still works with valid query
-      assert {:ok, results} = Connection.query(conn, "SELECT int32_col FROM datatypes_test LIMIT 1")
+      assert {:ok, results} = Connection.query(conn, "SELECT market_code FROM orders_with_preagg LIMIT 1")
 
       materialized = Result.materialize(results)
 
@@ -214,7 +234,7 @@ defmodule Adbc.CubeBasicTest do
       assert %Result{
                data: [
                  %Column{
-                   name: "int32_col"
+                   name: "market_code"
                  }
                ]
              } = materialized

@@ -44,3 +44,6 @@ checksum.exs
 **/CMakeFiles/*
 cmake_install.cmake
 CTestTestfile.cmake
+
+# Build artifacts
+/priv/

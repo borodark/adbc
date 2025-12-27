@@ -13,7 +13,7 @@ Comprehensive test covering all 14 implemented Arrow types:
 
 ### `test_simple.cpp`
 Basic connectivity and simple query tests:
-- Connection to CubeSQL
+- Connection to Cube ADBC Server
 - SELECT 1 (simple query)
 - Single column retrieval
 
@@ -24,7 +24,7 @@ Basic connectivity and simple query tests:
 cd /home/io/projects/learn_erl/adbc
 make
 
-# 2. Make sure CubeSQL is running
+# 2. Make sure Cube ADBC Server is running
 cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc
 ./start-cubesqld.sh
 
@@ -69,17 +69,17 @@ cd /home/io/projects/learn_erl/adbc/tests/cpp
 
 ## Configuration
 
-Override default CubeSQL connection settings via environment variables:
+Override default Cube ADBC Server connection settings via environment variables:
 
 ```bash
 # Connect to different host/port
 export CUBE_HOST=192.168.1.100
-export CUBE_PORT=4445
+export CUBE_PORT=8120
 export CUBE_TOKEN=my-token
 ./run.sh
 
 # Or inline
-CUBE_HOST=localhost CUBE_PORT=4445 ./run.sh test_simple
+CUBE_HOST=localhost CUBE_PORT=8120 ./run.sh test_simple
 ```
 
 ## Sample Output with Values
@@ -98,7 +98,7 @@ CUBE_HOST=localhost CUBE_PORT=4445 ./run.sh test_simple
       Column 'bool_col' (format: b): true
 ```
 
-**Note**: CubeSQL currently sends most numeric types as DOUBLE (format 'g') rather than their specific types. The driver's type implementations handle the conversion correctly.
+**Note**: Cube ADBC Server currently sends most numeric types as DOUBLE (format 'g') rather than their specific types. The driver's type implementations handle the conversion correctly.
 
 ## Expected Output
 
@@ -108,7 +108,7 @@ CUBE_HOST=localhost CUBE_PORT=4445 ./run.sh test_simple
 
 1. Initializing driver...
 2. Configuring connection...
-3. Connecting to CubeSQL at localhost:4445...
+3. Connecting to Cube ADBC Server at localhost:8120...
    ✅ Connected successfully!
 
 4. Test 1: SELECT 1
@@ -129,7 +129,7 @@ CUBE_HOST=localhost CUBE_PORT=4445 ./run.sh test_simple
   ADBC Cube Driver - Comprehensive Type Test
 =================================================================
 
-Connected to CubeSQL at localhost:4445
+Connected to Cube ADBC Server at localhost:8120
 
 ─────────────────────────────────────────────────────────────────
 Phase 1: Integer Types
@@ -182,7 +182,7 @@ cd /home/io/projects/learn_erl/adbc
 make
 ```
 
-### "Cannot connect to CubeSQL"
+### "Cannot connect to Cube ADBC Server"
 ```bash
 cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc
 ./start-cubesqld.sh
@@ -216,7 +216,7 @@ tests/cpp/
 
 - Tests use direct driver initialization (not driver manager)
 - Connection mode: Native protocol (Arrow IPC over TCP)
-- Default port: 4445 (Arrow Native), not 4444 (PostgreSQL wire protocol)
+- Default port: 8120 (ADBC(Arrow Native)), not 4444 (PostgreSQL wire protocol)
 - Time units: TIMESTAMP and TIME64 use microsecond precision
 - All temporal types use NULL timezone (UTC)
 

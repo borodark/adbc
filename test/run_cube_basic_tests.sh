@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run basic Cube ADBC driver tests (stable subset)
-# Requires cubesqld to be running with Arrow Native protocol
+# Requires cubesqld (Cube ADBC Server) to be running with ADBC(Arrow Native) protocol
 
 set -e
 
@@ -31,8 +31,8 @@ fi
 echo -e "${GREEN}✓ Cube driver found${NC}"
 
 # Check if cubesqld is running
-if ! lsof -Pi :4445 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
-    echo -e "${RED}Error: cubesqld is not running on port 4445${NC}"
+if ! lsof -Pi :8120 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+    echo -e "${RED}Error: Cube ADBC Server (cubesqld) is not running on port 8120${NC}"
     echo ""
     echo "Start it with:"
     echo "  cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc"
@@ -40,7 +40,7 @@ if ! lsof -Pi :4445 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
     echo "  ./start-cubesqld.sh    # Terminal 2"
     exit 1
 fi
-echo -e "${GREEN}✓ cubesqld is running on port 4445${NC}"
+echo -e "${GREEN}✓ Cube ADBC Server (cubesqld) is running on port 8120${NC}"
 
 # Check if Cube API is running
 if ! lsof -Pi :4008 -sTCP:LISTEN -t >/dev/null 2>&1 ; then

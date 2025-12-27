@@ -41,7 +41,7 @@ cd /home/io/projects/learn_erl/adbc
 make
 ```
 
-**2. CubeSQL running:**
+**2. Cube ADBC Server running:**
 ```bash
 cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc
 ./start-cubesqld.sh
@@ -50,11 +50,11 @@ cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc
 ## Custom Configuration
 ```bash
 # Connect to different server
-CUBE_HOST=192.168.1.100 CUBE_PORT=4445 ./run.sh
+CUBE_HOST=192.168.1.100 CUBE_PORT=8120 ./run.sh
 
 # Or export
 export CUBE_HOST=localhost
-export CUBE_PORT=4445
+export CUBE_PORT=8120
 export CUBE_TOKEN=test
 ./run.sh
 ```
@@ -66,7 +66,7 @@ export CUBE_TOKEN=test
 cd /home/io/projects/learn_erl/adbc && make
 ```
 
-**CubeSQL not running:**
+**Cube ADBC Server not running:**
 ```bash
 cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc
 ./start-cubesqld.sh
@@ -80,7 +80,7 @@ cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc
 
 ## Expected Output
 
-**With actual values from CubeSQL:**
+**With actual values from Cube ADBC Server:**
 ```
 ✅ INT8                           Rows: 1, Cols: 1
       Column 'int8_col' (format: g): 127.00

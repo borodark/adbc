@@ -13,9 +13,9 @@ set -e
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Default CubeSQL connection settings (can be overridden)
+# Default Cube ADBC Server connection settings (can be overridden)
 export CUBE_HOST="${CUBE_HOST:-localhost}"
-export CUBE_PORT="${CUBE_PORT:-4445}"
+export CUBE_PORT="${CUBE_PORT:-8120}"
 export CUBE_TOKEN="${CUBE_TOKEN:-test}"
 
 # Parse arguments
@@ -37,9 +37,9 @@ while [[ $# -gt 0 ]]; do
             echo "  -h, --help    Show this help message"
             echo ""
             echo "Environment variables:"
-            echo "  CUBE_HOST     CubeSQL host (default: localhost)"
-            echo "  CUBE_PORT     CubeSQL port (default: 4445)"
-            echo "  CUBE_TOKEN    CubeSQL token (default: test)"
+            echo "  CUBE_HOST     Cube ADBC Server host (default: localhost)"
+            echo "  CUBE_PORT     Cube ADBC Server port (default: 8120)"
+            echo "  CUBE_TOKEN    Cube ADBC Server token (default: test)"
             echo ""
             echo "Examples:"
             echo "  $0                      # Run all tests"
@@ -99,15 +99,15 @@ echo "==================================================================="
 echo "  ADBC C++ Test Runner"
 echo "==================================================================="
 echo ""
-echo "CubeSQL: $CUBE_HOST:$CUBE_PORT"
-echo "Token:   $CUBE_TOKEN"
-echo "Verbose: $([ $VERBOSE -eq 1 ] && echo 'Yes' || echo 'No')"
+echo "Cube ADBC Server: $CUBE_HOST:$CUBE_PORT"
+echo "Token:            $CUBE_TOKEN"
+echo "Verbose:          $([ $VERBOSE -eq 1 ] && echo 'Yes' || echo 'No')"
 echo ""
 
-# Check if CubeSQL is running
+# Check if Cube ADBC Server is running
 if ! nc -z "$CUBE_HOST" "$CUBE_PORT" 2>/dev/null; then
-    echo "⚠️  Warning: Cannot connect to CubeSQL at $CUBE_HOST:$CUBE_PORT"
-    echo "   Make sure CubeSQL is running:"
+    echo "⚠️  Warning: Cannot connect to Cube ADBC Server at $CUBE_HOST:$CUBE_PORT"
+    echo "   Make sure Cube ADBC Server is running:"
     echo "   cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc"
     echo "   ./start-cubesqld.sh"
     echo ""

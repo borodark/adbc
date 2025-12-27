@@ -20,9 +20,9 @@ public:
   NativeClient(const NativeClient &) = delete;
   NativeClient &operator=(const NativeClient &) = delete;
 
-  /// Connect to the Cube server
+  /// Connect to the Cube ADBC Server
   /// @param host Server hostname or IP address
-  /// @param port Server port (default: 4445)
+  /// @param port Server port (default: 8120)
   /// @param error Optional error output
   /// @return Status code
   AdbcStatusCode Connect(const std::string &host, int port,

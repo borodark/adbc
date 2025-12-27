@@ -60,8 +60,8 @@ Updated `.github/workflows/ci.yml` to exclude integration tests that require ext
   - `test/cube_preagg_benchmark.exs` (1 test)
 - Requires:
   - Cube API server (port 4008)
-  - CubeSQL Arrow Native server (port 4445)
-- Tests: 12 tests for Cube Arrow Native integration
+  - Cube ADBC Server ADBC(Arrow Native) server (port 8120)
+- Tests: 12 tests for Cube ADBC(Arrow Native) integration
 
 ### Unit Tests (No External Services)
 - No special tags
@@ -72,7 +72,7 @@ Updated `.github/workflows/ci.yml` to exclude integration tests that require ext
 
 ### Run All Tests (Including Integration)
 ```bash
-# Requires: PostgreSQL, Cube API, and CubeSQL servers running
+# Requires: PostgreSQL, Cube API, and Cube ADBC Server servers running
 mix test --include postgresql --include cube
 ```
 
@@ -83,7 +83,7 @@ mix test --exclude postgresql --exclude cube
 
 ### Run Only Cube Tests
 ```bash
-# Requires: Cube API and CubeSQL servers running
+# Requires: Cube API and Cube ADBC Server servers running
 mix test --include cube --exclude postgresql
 ```
 
@@ -97,7 +97,7 @@ mix test test/cube_preagg_benchmark.exs --include cube
 
 **Cube Integration Tests:**
 - ❌ Require Cube API server (Node.js application)
-- ❌ Require CubeSQL server (Rust application)
+- ❌ Require Cube ADBC Server server (Rust application)
 - ❌ Require specific cube schemas (`orders_with_preagg`, `orders_no_preagg`)
 - ❌ Complex setup not suitable for CI environment
 - ✅ Better tested locally or in dedicated integration test environment

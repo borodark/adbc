@@ -11,7 +11,7 @@ defmodule Adbc.CubeBasicTest do
 
   # Cube server connection details
   @cube_host "localhost"
-  @cube_port 4445
+  @cube_adbc_port 8120
   @cube_token "test"
 
   setup_all do
@@ -21,14 +21,14 @@ defmodule Adbc.CubeBasicTest do
     end
 
     # Check if cubesqld is running on the Arrow Native port
-    case :gen_tcp.connect(String.to_charlist(@cube_host), @cube_port, [:binary], 1000) do
+    case :gen_tcp.connect(String.to_charlist(@cube_host), @cube_adbc_port, [:binary], 1000) do
       {:ok, socket} ->
         :gen_tcp.close(socket)
         :ok
 
       {:error, :econnrefused} ->
         raise """
-        Cube server (cubesqld) is not running on #{@cube_host}:#{@cube_port}.
+        Cube server (cubesqld) is not running on #{@cube_host}:#{@cube_adbc_port}.
 
         Start it with:
           cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc
@@ -51,7 +51,7 @@ defmodule Adbc.CubeBasicTest do
         {Adbc.Database,
          driver: @cube_driver_path,
          "adbc.cube.host": @cube_host,
-         "adbc.cube.port": Integer.to_string(@cube_port),
+         "adbc.cube.port": Integer.to_string(@cube_adbc_port),
          "adbc.cube.connection_mode": "native",
          "adbc.cube.token": @cube_token}
       )

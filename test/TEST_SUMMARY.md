@@ -1,12 +1,12 @@
 # ADBC Test Suite Summary
 
-**Focus:** Arrow Native protocol (port 4445) with deployed orders cubes
+**Focus:** ADBC(Arrow Native) protocol (port 8120) with deployed orders cubes
 
-## Relevant Tests (Arrow Native)
+## Relevant Tests (ADBC(Arrow Native))
 
 ### 1. `test/adbc_cube_basic_test.exs` ✅
 **Status:** REFINED & PASSING (11/11 tests)
-**Purpose:** Integration tests for Cube queries via Arrow Native server
+**Purpose:** Integration tests for Cube queries via ADBC(Arrow Native) server
 
 **Changes made:**
 - Removed references to non-existent `datatypes_test` table
@@ -42,13 +42,13 @@ mix test test/cube_preagg_benchmark.exs --include cube
 
 ## Irrelevant Tests (Other Drivers)
 
-These tests are for other ADBC drivers, not relevant for Arrow Native testing:
+These tests are for other ADBC drivers, not relevant for ADBC(Arrow Native) testing:
 
 - `test/adbc_postgres_test.exs` - PostgreSQL driver tests - NOT RELEVANT
 - `test/adbc_sqlite_test.exs` - SQLite driver tests - NOT RELEVANT
 - `test/adbc_duckdb_test.exs` - DuckDB driver tests - NOT RELEVANT
 
-**Focus:** We are testing ONLY Arrow Native protocol on port 4445.
+**Focus:** We are testing ONLY ADBC(Arrow Native) protocol on port 8120.
 
 ## Unit Tests (Optional)
 
@@ -60,7 +60,7 @@ These test the ADBC Elixir wrapper itself, not Cube integration:
 - `test/adbc_database_test.exs` - Database module tests
 - `test/adbc_test.exs` - General unit tests
 
-These can be run if needed but are not critical for verifying Cube Arrow Native integration.
+These can be run if needed but are not critical for verifying Cube ADBC(Arrow Native) integration.
 
 ## Test Environment Requirements
 
@@ -71,16 +71,16 @@ These can be run if needed but are not critical for verifying Cube Arrow Native 
 cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc
 ./start-cube-api.sh
 
-# 2. CubeSQL Arrow Native server - Port 4445 (Terminal 2)
+# 2. CubeSQL ADBC(Arrow Native) server - Port 8120 (Terminal 2)
 cd ~/projects/learn_erl/cube/examples/recipes/arrow-ipc
 ./start-cubesqld.sh
 ```
 
-**Or manually configure Arrow Native server:**
+**Or manually configure ADBC(Arrow Native) server:**
 ```bash
 export CUBESQL_CUBE_URL="http://localhost:4008/cubejs-api"
 export CUBESQL_CUBE_TOKEN="test"
-export CUBEJS_ARROW_PORT="4445"
+export CUBEJS_ADBC_PORT="8120"
 export CUBESQL_ARROW_RESULTS_CACHE_ENABLED="true"
 export CUBESQL_ARROW_RESULTS_CACHE_MAX_ENTRIES="1000"
 export CUBESQL_ARROW_RESULTS_CACHE_TTL="3600"
@@ -134,4 +134,4 @@ MIX_BUILD_EMBEDDED=true mix test --include cube
 **Total relevant tests:** 12 (11 basic + 1 benchmark)
 **Status:** ALL PASSING ✅
 **Last verified:** 2025-12-26 (post-rebase)
-**Focus:** Arrow Native protocol with deployed orders cubes only
+**Focus:** ADBC(Arrow Native) protocol with deployed orders cubes only

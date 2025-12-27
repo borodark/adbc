@@ -2,12 +2,12 @@
 
 **Date:** 2025-12-26
 **Cube Branch:** feature/arrow-ipc-api (rebased onto upstream master)
-**CubeSQL:** Arrow Native server on port 4445
+**Cube ADBC Server:** ADBC(Arrow Native) server on port 8120
 **Cache:** Arrow Results Cache ENABLED (max_entries=1000, ttl=3600s)
 
 ## Test Summary
 
-Successfully verified ADBC driver integration with rebased Cube Arrow Native server.
+Successfully verified ADBC driver integration with rebased Cube ADBC(Arrow Native) server.
 
 ### Test File: test_cube_integration.cpp
 
@@ -66,7 +66,7 @@ All Cube schema queries successfully matched pre-aggregations:
 ```bash
 CUBESQL_CUBE_URL=http://localhost:4008/cubejs-api
 CUBESQL_CUBE_TOKEN=test
-CUBEJS_ARROW_PORT=4445
+CUBEJS_ADBC_PORT=8120
 CUBESQL_ARROW_RESULTS_CACHE_ENABLED=true
 CUBESQL_ARROW_RESULTS_CACHE_MAX_ENTRIES=1000
 CUBESQL_ARROW_RESULTS_CACHE_TTL=3600
@@ -77,7 +77,7 @@ CUBESQL_LOG_LEVEL=info
 
 ✅ **ADBC integration verified successfully with rebased code**
 
-The Arrow Native server correctly:
+The ADBC(Arrow Native) server correctly:
 1. Handles ADBC driver connections and queries
 2. Routes queries to pre-aggregations
 3. Caches query results appropriately

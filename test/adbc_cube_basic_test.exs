@@ -7,7 +7,7 @@ defmodule Adbc.CubeBasicTest do
   @moduletag timeout: 30_000
 
   # Path to our custom-built Cube driver
-  @cube_driver_path Path.join(:code.priv_dir(:adbc),"lib/libadbc_driver_cube.so")
+  @cube_driver_path Path.join(:code.priv_dir(:adbc), "lib/libadbc_driver_cube.so")
 
   # Cube server connection details
   @cube_host "localhost"
@@ -174,6 +174,52 @@ defmodule Adbc.CubeBasicTest do
       assert length(first_column.data) > 0
     end
 
+    test "queries orders_with_preagg cube II", %{conn: conn} do
+      query = """
+      SELECT
+      market_code,
+      brand_code,
+      MEASURE(count)
+      FROM orders_with_preagg
+      group by 1,2
+      order by 3 desc
+      LIMIT 8466
+      """
+
+      assert {:ok, results} = Connection.query(conn, query)
+      materialized = Result.materialize(results)
+      IO.inspect(materialized)
+      # Should have 3 columns
+      assert length(materialized.data) == 3
+
+      # Should have data
+      first_column = hd(materialized.data)
+      assert length(first_column.data) > 0
+    end
+
+    test "queries orders_with_preagg cube III", %{conn: conn} do
+      query = """
+      SELECT
+      market_code as market,
+      brand_code as brand,
+      MEASURE(count) as count_blin
+      FROM orders_with_preagg
+      group by 1,2
+      order by 3 desc
+      LIMIT 8466
+      """
+
+      assert {:ok, results} = Connection.query(conn, query)
+      materialized = Result.materialize(results)
+      IO.inspect(materialized)
+      # Should have 3 columns
+      assert length(materialized.data) == 3
+
+      # Should have data
+      first_column = hd(materialized.data)
+      assert length(first_column.data) > 0
+    end
+
     test "queries orders_no_preagg cube", %{conn: conn} do
       query = """
       SELECT
@@ -185,6 +231,32 @@ defmodule Adbc.CubeBasicTest do
 
       assert {:ok, results} = Connection.query(conn, query)
       materialized = Result.materialize(results)
+
+      # Should have 2 columns
+      assert length(materialized.data) == 2
+
+      # Should have data
+      first_column = hd(materialized.data)
+      assert length(first_column.data) > 0
+    end
+
+    test "queries orders_no_preagg cube II", %{conn: conn} do
+      query = """
+      SELECT
+      orders_no_preagg.market_code,
+      MEASURE(orders_no_preagg.count)
+      FROM
+      orders_no_preagg
+      GROUP BY
+      1
+      ORDER BY
+      2 DESC
+      LIMIT 249
+      """
+
+      assert {:ok, results} = Connection.query(conn, query)
+      materialized = Result.materialize(results)
+      IO.inspect(materialized)
 
       # Should have 2 columns
       assert length(materialized.data) == 2
@@ -218,7 +290,8 @@ defmodule Adbc.CubeBasicTest do
 
       assert {:error, %Adbc.Error{} = error} = Connection.query(conn, query)
       # Verify detailed error message is passed through
-      assert error.message =~ "nonexistent_column" or error.message =~ "not found" or error.message =~ "Invalid identifier"
+      assert error.message =~ "nonexistent_column" or error.message =~ "not found" or
+               error.message =~ "Invalid identifier"
     end
 
     test "connection recovers after query errors", %{conn: conn} do
@@ -226,7 +299,8 @@ defmodule Adbc.CubeBasicTest do
       assert {:error, _} = Connection.query(conn, "SELECT * FROM nonexistent_table LIMIT 1")
 
       # Then verify connection still works with valid query
-      assert {:ok, results} = Connection.query(conn, "SELECT market_code FROM orders_with_preagg LIMIT 1")
+      assert {:ok, results} =
+               Connection.query(conn, "SELECT market_code FROM orders_with_preagg LIMIT 1")
 
       materialized = Result.materialize(results)
 

@@ -64,14 +64,15 @@ defmodule CubePreAggBenchmark do
 
   setup do
     # Start database with Cube driver
-    db = start_supervised!(
-      {Database,
-       driver: @cube_driver_path,
-       "adbc.cube.host": @cube_host,
-       "adbc.cube.port": Integer.to_string(@cube_adbc_port),
-       "adbc.cube.connection_mode": "native",
-       "adbc.cube.token": @cube_token}
-    )
+    db =
+      start_supervised!(
+        {Database,
+         driver: @cube_driver_path,
+         "adbc.cube.host": @cube_host,
+         "adbc.cube.port": Integer.to_string(@cube_adbc_port),
+         "adbc.cube.connection_mode": "native",
+         "adbc.cube.token": @cube_token}
+      )
 
     # Start connection
     conn = start_supervised!({Connection, database: db})
@@ -133,10 +134,12 @@ defmodule CubePreAggBenchmark do
 
       # Warmup runs
       IO.puts("Warming up...")
+
       for _ <- 1..@warmup_iterations do
         {:ok, _} = Connection.query(conn, query_no_preagg)
         {:ok, _} = Connection.query(conn, query_with_preagg)
       end
+
       IO.puts("Warmup complete.\n")
 
       # Benchmark WITHOUT pre-aggregations (HTTP/JSON)
@@ -169,7 +172,7 @@ defmodule CubePreAggBenchmark do
 
       # Calculate performance improvement
       speedup = avg_no_preagg / avg_with_preagg
-      improvement_pct = ((avg_no_preagg - avg_with_preagg) / avg_no_preagg) * 100
+      improvement_pct = (avg_no_preagg - avg_with_preagg) / avg_no_preagg * 100
 
       IO.puts(String.duplicate("=", 80))
       IO.puts("Performance Comparison")
@@ -265,7 +268,6 @@ defmodule CubePreAggBenchmark do
   end
 
   defp do_display_results(result, limit) do
-
     # Get column names
     column_names = Enum.map(result.data, & &1.name)
 
@@ -279,10 +281,11 @@ defmodule CubePreAggBenchmark do
 
     # Print rows
     for i <- 0..(rows_to_show - 1) do
-      row_values = Enum.map(result.data, fn column ->
-        value = Enum.at(column.data, i)
-        format_value(value)
-      end)
+      row_values =
+        Enum.map(result.data, fn column ->
+          value = Enum.at(column.data, i)
+          format_value(value)
+        end)
 
       IO.puts("  " <> Enum.join(row_values, " | "))
     end

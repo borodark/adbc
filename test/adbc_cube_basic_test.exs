@@ -220,6 +220,30 @@ defmodule Adbc.CubeBasicTest do
       assert length(first_column.data) > 0
     end
 
+    test "queries orders_with_preagg cube IV", %{conn: conn} do
+      query = """
+      SELECT
+      market_code as market,
+      brand_code as brand,
+      MEASURE(count) as count_blin
+      FROM orders_with_preagg
+      WHERE (orders_with_preagg.market_code = 'BQ')
+      group by 1,2
+      HAVING (MEASURE(orders_with_preagg.count) > '1000')
+      order by 3 desc
+      """
+
+      assert {:ok, results} = Connection.query(conn, query)
+      materialized = Result.materialize(results)
+      IO.inspect(materialized)
+      # Should have 3 columns
+      assert length(materialized.data) == 3
+
+      # Should have data
+      first_column = hd(materialized.data)
+      assert length(first_column.data) > 0
+    end
+
     test "queries orders_no_preagg cube", %{conn: conn} do
       query = """
       SELECT
@@ -252,6 +276,31 @@ defmodule Adbc.CubeBasicTest do
       ORDER BY
       2 DESC
       LIMIT 249
+      """
+
+      assert {:ok, results} = Connection.query(conn, query)
+      materialized = Result.materialize(results)
+      IO.inspect(materialized)
+
+      # Should have 2 columns
+      assert length(materialized.data) == 2
+
+      # Should have data
+      first_column = hd(materialized.data)
+      assert length(first_column.data) > 0
+    end
+
+    test "queries orders_no_preagg cube III", %{conn: conn} do
+      query = """
+      SELECT
+      orders_no_preagg.market_code,
+      MEASURE(orders_no_preagg.count)
+      FROM
+      orders_no_preagg
+      WHERE (orders_no_preagg.market_code = 'VN')
+      GROUP BY 1
+      HAVING (MEASURE(orders_no_preagg.count) > '20000')
+      ORDER BY 2 DESC
       """
 
       assert {:ok, results} = Connection.query(conn, query)

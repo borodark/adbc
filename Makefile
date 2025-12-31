@@ -11,9 +11,11 @@ ADBC_C_SRC = $(ADBC_SRC)/c
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	ADBC_DRIVER_COMMON_LIB = $(PRIV_DIR)/lib/libadbc_driver_manager.so
+	ADBC_DRIVER_CUBE_LIB = $(PRIV_DIR)/lib/libadbc_driver_cube.so
 endif
 ifeq ($(UNAME_S),Darwin)
 	ADBC_DRIVER_COMMON_LIB = $(PRIV_DIR)/lib/libadbc_driver_manager.dylib
+	ADBC_DRIVER_CUBE_LIB = $(PRIV_DIR)/lib/libadbc_driver_cube.dylib
 endif
 
 C_SRC = $(shell pwd)/c_src
@@ -34,16 +36,17 @@ ifdef CMAKE_TOOLCHAIN_FILE
 endif
 
 CMAKE_BUILD_TYPE ?= Release
-DEFAULT_JOBS ?= 1
-CMAKE_ADBC_BUILD_DIR = $(MIX_APP_PATH)/cmake_adbc
-CMAKE_ADBC_OPTIONS ?= ""
-CMAKE_ADBC_NIF_BUILD_DIR = $(MIX_APP_PATH)/cmake_adbc_nif
-CMAKE_ADBC_NIF_OPTIONS ?= ""
+DEFAULT_JOBS ?= 22
+BUILD_DIR = $(MIX_APP_PATH)/_build
+CMAKE_ADBC_BUILD_DIR = $(BUILD_DIR)/cmake/adbc
+CMAKE_ADBC_OPTIONS ?=
+CMAKE_ADBC_NIF_BUILD_DIR = $(BUILD_DIR)/cmake/nif
+CMAKE_ADBC_NIF_OPTIONS ?=
 MAKE_BUILD_FLAGS ?= -j$(DEFAULT_JOBS)
 
 .DEFAULT_GLOBAL := build
 
-build: $(NIF_SO_REL)
+build: $(NIF_SO_REL) $(ADBC_DRIVER_CUBE_LIB)
 	@ if [ "${CI}" = "true" ]; then \
 		file "$(NIF_SO)" ; \
 	fi
@@ -51,8 +54,7 @@ build: $(NIF_SO_REL)
 clean:
 	@rm -rf "$(NIF_SO_REL)"
 	@rm -rf "$(NIF_SO)"
-	@rm -rf "$(CMAKE_ADBC_NIF_BUILD_DIR)"
-	@rm -rf "$(CMAKE_ADBC_BUILD_DIR)"
+	@rm -rf "$(BUILD_DIR)"
 	@rm -rf "$(PRIV_DIR)"
 
 priv_dir:
@@ -70,6 +72,7 @@ adbc: priv_dir
 		cmake --no-warn-unused-cli \
 			-DADBC_BUILD_SHARED="ON" \
 			-DADBC_DRIVER_MANAGER="ON" \
+			-DADBC_DRIVER_CUBE="ON" \
 			-DADBC_DRIVER_POSTGRESQL="OFF" \
 			-DADBC_DRIVER_SQLITE="OFF" \
 			-DADBC_DRIVER_FLIGHTSQL="OFF" \
@@ -85,16 +88,50 @@ adbc: priv_dir
 		cmake --build . --target install -j ; \
 	fi
 
+$(ADBC_DRIVER_CUBE_LIB): adbc
+	@ if [ ! -f "$(ADBC_DRIVER_CUBE_LIB)" ]; then \
+		cd "$(CMAKE_ADBC_BUILD_DIR)" && \
+		cmake --build . --target adbc_driver_cube_shared -j && \
+		cmake --install . ; \
+	fi
+
+.PHONY: cube_driver
+cube_driver: $(ADBC_DRIVER_CUBE_LIB)
+
+.PHONY: test
+test: priv_dir
+	@ mkdir -p "$(BUILD_DIR)/cmake/test" && \
+	cd "$(BUILD_DIR)/cmake/test" && \
+	cmake --no-warn-unused-cli \
+		-DADBC_BUILD_SHARED="ON" \
+		-DADBC_DRIVER_MANAGER="ON" \
+		-DADBC_DRIVER_CUBE="ON" \
+		-DADBC_DRIVER_POSTGRESQL="OFF" \
+		-DADBC_DRIVER_SQLITE="OFF" \
+		-DADBC_DRIVER_FLIGHTSQL="OFF" \
+		-DADBC_DRIVER_SNOWFLAKE="OFF" \
+		-DADBC_BUILD_STATIC="OFF" \
+		-DADBC_BUILD_TESTS="ON" \
+		-DADBC_USE_ASAN="OFF" \
+		-DADBC_USE_UBSAN="OFF" \
+		-DCMAKE_BUILD_TYPE="$(CMAKE_BUILD_TYPE)" \
+		-DCMAKE_INSTALL_PREFIX="$(PRIV_DIR)" \
+		-DADBC_DEPENDENCY_SOURCE=BUNDLED \
+		$(CMAKE_CONFIGURE_FLAGS) $(CMAKE_ADBC_OPTIONS) "$(ADBC_C_SRC)" && \
+	cmake --build . -j && \
+	cd driver/cube && \
+	./adbc-driver-cube-types-integration-test
+
 $(NIF_SO_REL): priv_dir adbc $(C_SRC_REL)/adbc_nif_resource.hpp $(C_SRC_REL)/adbc_nif.cpp $(C_SRC_REL)/nif_utils.hpp $(C_SRC_REL)/nif_utils.cpp
 	@ mkdir -p "$(CMAKE_ADBC_NIF_BUILD_DIR)" && \
 	cd "$(CMAKE_ADBC_NIF_BUILD_DIR)" && \
 	cmake --no-warn-unused-cli \
-		-D CMAKE_BUILD_TYPE="$(CMAKE_BUILD_TYPE)" \
-		-D C_SRC="$(C_SRC)" \
-		-D ADBC_SRC="$(ADBC_SRC)" \
-		-D MIX_APP_PATH="$(MIX_APP_PATH)" \
-		-D PRIV_DIR="$(PRIV_DIR)" \
-		-D ERTS_INCLUDE_DIR="$(ERTS_INCLUDE_DIR)" \
+		-DCMAKE_BUILD_TYPE="$(CMAKE_BUILD_TYPE)" \
+		-DC_SRC="$(C_SRC)" \
+		-DADBC_SRC="$(ADBC_SRC)" \
+		-DMIX_APP_PATH="$(MIX_APP_PATH)" \
+		-DPRIV_DIR="$(PRIV_DIR)" \
+		$(if $(ERTS_INCLUDE_DIR),-DERTS_INCLUDE_DIR="$(ERTS_INCLUDE_DIR)") \
 		$(CMAKE_CONFIGURE_FLAGS) $(CMAKE_ADBC_NIF_OPTIONS) "$(shell pwd)" && \
 	make "$(MAKE_BUILD_FLAGS)" && \
 	cp "$(CMAKE_ADBC_NIF_BUILD_DIR)/adbc_nif.so" "$(NIF_SO)"

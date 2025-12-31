@@ -40,10 +40,22 @@ jobs:
           otp-version: "26.2"
           elixir-version: "1.15.8"
 
+      - name: Install FlatBuffers 2.0.8 from source
+        run: |
+          sudo apt-get update && sudo apt install -y build-essential cmake
+          cd /tmp
+          wget https://github.com/google/flatbuffers/archive/v2.0.8.tar.gz
+          tar -xzf v2.0.8.tar.gz
+          cd flatbuffers-2.0.8
+          cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+
       - name: Compile and Test
         run: |
           mix deps.get
-          mix test
+          mix test --exclude cube
 
   windows:
     if: contains(github.event.pull_request.labels.*.name, 'skip ci') != true
@@ -66,11 +78,11 @@ jobs:
         shell: bash
         run: |
           mix deps.get
-          mix test --exclude postgresql
+          mix test --exclude postgresql --exclude cube
 
   macos:
     if: contains(github.event.pull_request.labels.*.name, 'skip ci') != true
-    runs-on: macos-13
+    runs-on: macos-14
     env:
       MIX_ENV: test
       OTP_VERSION: "26.2"
@@ -79,6 +91,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install Flatbuffers using Homebrew
+        run: brew install gcc flatbuffers
 
       - name: Install OTP and Elixir
         run: |
@@ -94,4 +109,4 @@ jobs:
           mix local.hex --force
           mix local.rebar --force
           mix deps.get
-          mix test --exclude postgresql
+          mix test --exclude postgresql --exclude cube

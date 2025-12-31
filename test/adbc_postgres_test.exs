@@ -8,7 +8,11 @@ defmodule Adbc.PostgresTest do
   setup do
     db =
       start_supervised!(
-        {Adbc.Database, driver: :postgresql, uri: "postgres://postgres:postgres@localhost"}
+        {Adbc.Database,
+         driver: :postgresql,
+         uri:
+           "postgres://postgres:postgres@localhost:" <>
+             System.get_env("PG_PORT", "5432")}
       )
 
     conn = start_supervised!({Connection, database: db})

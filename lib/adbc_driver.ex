@@ -259,7 +259,8 @@ defmodule Adbc.Driver do
 
   defp cached_download(url, ignore_proxy, driver_name, version, triplet) do
     cache_dir = adbc_cache_dir()
-    cache_path = Path.join(cache_dir, "#{driver_name}-#{triplet}-#{version}.zip")
+    cache_ext = archive_extension(url)
+    cache_path = Path.join(cache_dir, "#{driver_name}-#{triplet}-#{version}#{cache_ext}")
 
     if File.exists?(cache_path) do
       {:ok, cache_path}
@@ -274,6 +275,18 @@ defmodule Adbc.Driver do
     end
   end
 
+  defp archive_extension(url) do
+    url = String.downcase(url)
+
+    cond do
+      String.ends_with?(url, ".tar.gz") -> ".tar.gz"
+      String.ends_with?(url, ".tgz") -> ".tgz"
+      String.ends_with?(url, ".zip") -> ".zip"
+      String.ends_with?(url, ".whl") -> ".whl"
+      true -> ".bin"
+    end
+  end
+
   defp adbc_cache_dir do
     if dir = System.get_env("ADBC_CACHE_DIR") do
       Path.expand(dir)
@@ -283,6 +296,24 @@ defmodule Adbc.Driver do
   end
 
   defp extract!(cache_path, driver_name, version, triplet) do
+    case archive_type(cache_path) do
+      :zip -> extract_zip!(cache_path, driver_name, version, triplet)
+      :tar_gz -> extract_tar!(cache_path, driver_name, version, triplet, [:compressed])
+      :tar -> extract_tar!(cache_path, driver_name, version, triplet, [])
+    end
+  end
+
+  defp archive_type(path) do
+    path = String.downcase(path)
+
+    cond do
+      String.ends_with?(path, ".tar.gz") or String.ends_with?(path, ".tgz") -> :tar_gz
+      String.ends_with?(path, ".tar") -> :tar
+      true -> :zip
+    end
+  end
+
+  defp extract_zip!(cache_path, driver_name, version, triplet) do
     adbc_so_priv_dir = adbc_so_priv_dir()
     File.mkdir_p!(adbc_so_priv_dir)
 
@@ -291,7 +322,7 @@ defmodule Adbc.Driver do
     {:ok, zip_files} = :zip.table(cache_path)
 
     for {:zip_file, filename, _, _, _, _} <- zip_files,
-        Path.extname(filename) in [".so", ".dylib", ".dll"] do
+        Path.extname(to_string(filename)) in [".so", ".dylib", ".dll"] do
       {:ok, {_filename, file_data}} = :zip.zip_get(filename, zip_handle)
 
       filepath = adbc_driver_so(driver_name, version, triplet)
@@ -299,6 +330,22 @@ defmodule Adbc.Driver do
     end
 
     :ok = :zip.zip_close(zip_handle)
+  end
+
+  defp extract_tar!(cache_path, driver_name, version, triplet, opts) do
+    adbc_so_priv_dir = adbc_so_priv_dir()
+    File.mkdir_p!(adbc_so_priv_dir)
+
+    cache_path = String.to_charlist(cache_path)
+    {:ok, tar_files} = :erl_tar.extract(cache_path, [:memory] ++ opts)
+
+    for {filename, file_data} <- tar_files,
+        Path.extname(to_string(filename)) in [".so", ".dylib", ".dll"] do
+      filepath = adbc_driver_so(driver_name, version, triplet)
+      File.write!(filepath, file_data)
+    end
+
+    :ok
   end
 
   def so_path(driver_name, opts \\ [])

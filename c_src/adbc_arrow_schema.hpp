@@ -110,7 +110,7 @@ static int get_map_schema(ErlNifEnv *env, struct ArrowSchema * schema, uint64_t 
         return erlang::nif::error(env, "invalid ArrowSchema (map), its entries n_children != 2");
     }
 
-    ERL_NIF_TERM key_schema, value_schema;
+    ERL_NIF_TERM key_schema = kAtomNil, value_schema = kAtomNil;
     int kv = 0;
     for (int64_t child_i = 0; child_i < 2; child_i++) {
         struct ArrowSchema * entry_schema = entries_schema->children[child_i];
@@ -141,7 +141,7 @@ static int get_map_schema(ErlNifEnv *env, struct ArrowSchema * schema, uint64_t 
     }
 
     ERL_NIF_TERM map_kv_keys[] = { kAtomKey, kAtomValue };
-    ERL_NIF_TERM map_kv_values[] = { key_schema, value_schema };
+    ERL_NIF_TERM map_kv_values[] = { key_schema, value_schema };  // Now guaranteed to be initialized
     // only fail if there are duplicated keys
     // so we don't need to check the return value
     enif_make_map_from_arrays(env, map_kv_keys, map_kv_values, 2, &map_kv_schema);

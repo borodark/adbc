@@ -20,15 +20,47 @@ defmodule Update do
   @adbc_tag "apache-arrow-adbc-19"
   @adbc_drivers ~w(sqlite postgresql flightsql snowflake bigquery)a
 
+  @cube_driver_version System.get_env("CUBE_DRIVER_VERSION") || "0.1.0"
+  @cube_repo System.get_env("CUBE_DRIVER_REPO")
+
   def versions do
     Map.new(@adbc_drivers, &{&1, @adbc_driver_version})
     |> Map.merge(%{duckdb: @duckdb_version})
+    |> Map.merge(%{cube: @cube_driver_version})
   end
 
   def mappings do
     %{}
     |> Map.merge(adbc_mappings(@adbc_driver_version, @adbc_tag))
     |> Map.merge(duckdb_mappings(@duckdb_version))
+    |> Map.merge(cube_mappings(@cube_driver_version, @cube_repo))
+  end
+
+  defp cube_mappings(_version, nil) do
+    IO.puts("Skipping cube mappings (set CUBE_DRIVER_REPO=org/repo to enable).")
+    %{cube: %{}}
+  end
+
+  defp cube_mappings(version, repo) do
+    assets = fetch_assets!("https://api.github.com/repos/#{repo}/releases/tags/v#{version}")
+
+    IO.puts("Generating cube")
+
+    prefix = "adbc_driver_cube-#{version}"
+    suffix = ".tar.gz"
+
+    archives =
+      Enum.filter(assets, fn %{"name" => name} ->
+        String.starts_with?(name, prefix) and String.ends_with?(name, suffix)
+      end)
+
+    {x86_64_linux_gnu, archives} = data_for(archives, ["x86_64-linux-gnu"])
+
+    if archives != [] do
+      IO.puts("The following archives for cube are not being used:\n\n#{inspect(archives)}")
+    end
+
+    %{cube: %{"x86_64-linux-gnu" => x86_64_linux_gnu}}
   end
 
   defp duckdb_mappings(duckdb_version) do

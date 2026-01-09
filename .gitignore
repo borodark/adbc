@@ -36,3 +36,14 @@ adbc-*.tar
 
 # checksum
 checksum.exs
+
+# Make temporary
+
+/cmake_adbc/
+/cmake_adbc_nif/
+**/CMakeFiles/*
+cmake_install.cmake
+CTestTestfile.cmake
+
+# Build artifacts
+/priv/

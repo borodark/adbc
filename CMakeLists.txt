@@ -13,6 +13,19 @@ if(NOT DEFINED PRIV_DIR)
 endif()
 message(STATUS "Using PRIV_DIR: ${PRIV_DIR}")
 
+if(UNIX AND NOT APPLE)
+    # Find the FlatBuffers package
+    include_directories(/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/cmake/flatbuffers)
+    find_package(FlatBuffers CONFIG REQUIRED)
+    # Print the directory where the config file was found
+    if(FlatBuffers_FOUND)
+          message(STATUS "FlatBuffers found in directory: ${FlatBuffers_DIR}")
+          message(STATUS "FlatBuffers config file path: ${FlatBuffers_CONFIG}")
+    else()
+          message(FATAL_ERROR "Could not find FlatBuffers package")
+    endif()
+endif()
+
 if(DEFINED ERTS_INCLUDE_DIR AND NOT "${ERTS_INCLUDE_DIR}" STREQUAL "")
     set(ERTS_INCLUDE_DIR "${ERTS_INCLUDE_DIR}")
 else()
@@ -35,7 +48,11 @@ if(DEFINED ENV{TARGET_GCC_FLAGS})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{TARGET_GCC_FLAGS}")
 endif()
 
-message(STATUS "CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
+if(DEFINED CMAKE_TOOLCHAIN_FILE AND NOT "${CMAKE_TOOLCHAIN_FILE}" STREQUAL "")
+    message(STATUS "CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
+else()
+    message(STATUS "CMAKE_TOOLCHAIN_FILE: not set")
+endif()
 
 find_package(AdbcDriverManager REQUIRED PATHS "${PRIV_DIR}/" NO_DEFAULT_PATH)
 include_directories("${PRIV_DIR}/include")
